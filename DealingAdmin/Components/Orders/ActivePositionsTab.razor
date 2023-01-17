@@ -1,0 +1,352 @@
+﻿@using System.ComponentModel
+@using AntDesign.TableModels
+@using AntDesign
+@using DealingAdmin.Abstractions
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Services
+@using DealingAdmin.Shared.Services
+@using Serilog.Core
+@using SimpleTrading.Abstraction.Caches.ActiveOrders
+@using SimpleTrading.Abstraction.Trading.Settings
+@using SimpleTrading.Engine.Grpc.Contracts
+
+@inject StateManager AppState
+@inject LiveDemoServiceMapper LiveDemoServices
+@inject IAccountTypeFilter AccTypeFilter
+@inject IInstrumentsCache InstrumentsCache
+@inject AdminAppSettings appSettings
+@inject ISnackbar snackbar
+@inject Logger logger
+
+<div id="ActivePositionsRegion">
+    <div class="mb-2">
+        <AntDesign.Row>
+            <Col Span="4" Class="text-nowrap">
+                <span class="text-bold mx-2">Accounts:</span>
+                <Select Mode="default"
+                        Value="AccountsTypeFilter"
+                        TItemValue="AccountType"
+                        TItem="AccountType"
+                        OnSelectedItemChanged="AccountsTypeFilterChanged">
+                    <SelectOptions>
+                        @foreach (var item in Enum.GetValues<AccountType>())
+                        {
+                            <SelectOption
+                                TItemValue="AccountType"
+                                TItem="AccountType"
+                                Value=@item
+                                Label="@item.ToString()"/>
+                        }
+                    </SelectOptions>
+                </Select>
+            </Col>
+        </AntDesign.Row>       
+    </div>
+    <Table DataSource="@GridData"
+           TItem="ActivePositionViewModel"
+           Loading="@isLoading"
+           Bordered="@true"
+           Total="_total"
+           ScrollY="calc(100vh - 260px)"
+           @bind-PageIndex="_pageIndex"
+           @bind-PageSize="_pageSize">
+        <RowTemplate> 
+            <AntDesign.Column Ellipsis
+                    TData="long"
+                    Title="Id"
+                    @bind-Field="@context.Id"
+                    Width="90"
+                    Sortable
+                    Filterable>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Account"
+                    TData="string"
+                    @bind-Field="@context.AccountId"
+                    Width="130"
+                    Sortable
+                    Filterable/>
+            <AntDesign.Column Title="Open Date"
+                    TData="DateTime"
+                    @bind-Field="@context.OpenDate"
+                    Width="160"
+                    Format="yyyy-MM-dd"
+                    Sortable>
+                <div style="font-family: Nunito Sans,-apple-system,BlinkMacSystemFont,Helvetica Neue,sans-serif;">
+                    <div><Icon Type="plus-circle" Theme="outline"  /> @FormatUtils.DateTimeNamedWithMsFormat(context.Created)</div>
+                    <div><Icon Type="check-circle" Theme="outline" /> @FormatUtils.DateTimeNamedWithMsFormat(context.OpenDate)</div>
+                </div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Open BidAsk"
+                    @bind-Field="@context.Id"
+                    Width="130">
+                <OrderOpenBidAsk BidAsk="context.OpenPriceBidAsk" Digits="context.InstrumentDigits"></OrderOpenBidAsk>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Profit"
+                    @bind-Field="@context.Id"
+                    Width="280">
+                <TitleTemplate>
+                    <div class="grid-container-price-profit">
+                        <div>Now BidAsk</div>
+                        <div>Net Profit</div>
+                    </div>
+                </TitleTemplate>
+                <ChildContent>
+                    <OrderPriceAndProfit Order="context" Digits="context.InstrumentDigits"></OrderPriceAndProfit>
+                </ChildContent>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Operation"
+                    @bind-Field="@context.Operation"
+                    Width="100">
+                <OrderOperation Operation="context.Operation" OrderType="context.OpenOrderType"></OrderOperation>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Instrument"
+                    TData="string"
+                    @bind-Field="@context.Instrument"
+                    Sortable
+                    Filterable/>
+            <AntDesign.Column Title="Investment"
+                    TData="double"
+                    @bind-Field="@context.InvestmentAmount"
+                    Width="120"
+                    Sortable>
+                <div>@($"{context.InvestmentAmount.ToString("F0")} x 1:{context.Leverage }")</div>
+                <div>@($"V: {(context.InvestmentAmount * context.Leverage).ToString("F0")}")</div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Take Profit"
+                    TData="double?"
+                    @bind-Field="@context.TakeProfitInCurrency"
+                    Width="80">
+                <div>@($"{GetOrderTakeProfit(context)}")</div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Stop Loss"
+                    TData="double?"
+                    @bind-Field="@context.StopLossInCurrency"
+                    Width="80">
+                <div>@($"{GetOrderStopLoss(context)}")</div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Swaps"
+                    TData="double"
+                    Width="80">
+                <div>@($"{GetOrderSwaps(context)}")</div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Refill %"
+                    TData="double"
+                    @bind-Field="@context.ToppingUpPercent"
+                    Sortable>
+                <div>@((context.ToppingUpPercent > 0 ? $"{context.ToppingUpPercent.ToString("F0")}%" : "-"))</div>
+            </AntDesign.Column>
+            <AntDesign.Column Title="Refill Amount"
+                    TData="double"
+                    @bind-Field="@context.ReservedFundsForToppingUp"
+                    Sortable>
+                <div>@((context.ReservedFundsForToppingUp > 0 ? context.ReservedFundsForToppingUp.ToString("F2") : "-"))</div>
+            </AntDesign.Column>
+            <ActionColumn Title="Close" Width="66">
+                <div>
+                    <a @onclick="()=>ShowClosePositionDialog(context)"><i class="material-icons color-crimson mx-1">cancel</i></a>
+                </div>
+            </ActionColumn>
+        </RowTemplate>
+    </Table>
+</div>
+
+<Modal Title="@closePositionDialogTitle"
+       Visible="@isEditInstrumentDialogVisible"
+       Closable="@false"
+       OkText="@("Confirm")"
+       OnOk=@ClosePosition
+       OnCancel=@HideClosePositionDialog
+       Width="720">
+    <b>Confirm closing position:</b>
+    <Form @ref="closePositionForm"
+          Model="closePositionToken"
+          ValidateOnChange="@true"
+          ValidateMode="@FormValidateMode.Rules"       
+          LabelColSpan="10"
+          WrapperColSpan="14">
+        <Validator>
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+        </Validator>
+        <ChildContent>
+            <FormItem Label="API Key" Required Rules=@CrudApiKeyRule>
+                <InputPassword @bind-Value="@closePositionToken" />
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>
+
+<style>
+.ant-table td {
+    padding: 5px 10px !important
+}
+</style>
+
+@code
+{
+    [Parameter]
+    public string AccountId { get; set; }
+
+    public List<ActivePositionViewModel> GridData
+        = new List<ActivePositionViewModel>();
+
+    private AccountType AccountsTypeFilter = AccountType.Real;
+
+    private List<TableFilter<string>> accountFilter = new List<TableFilter<string>>();
+
+    int _pageIndex = 1;
+    int _pageSize = 200;
+    int _total = 0;
+
+    private bool isLoading = false;
+    private bool isEditInstrumentDialogVisible = false;
+    private string closePositionDialogTitle;
+    private string closePositionToken;
+
+    AntDesign.Form<string> closePositionForm;
+    ActivePositionViewModel positionToClose;
+    private FormValidationRule[] CrudApiKeyRule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+
+        CrudApiKeyRule = new FormValidationRule[]
+        {
+            new FormValidationRule
+            {
+                Required = true,
+                Type = FormFieldType.String,
+                OneOf = new string[] { appSettings.AdminCrudApiKey },
+                Message = "API Key is not valid"
+            }
+        };
+
+        AppState.LiveDemoModeChanged += async () => await InvokeAsync(() => RefreshData());
+    }
+
+    private async void AccountsTypeFilterChanged(AccountType selectedAccType)
+    {
+        AccountsTypeFilter = selectedAccType;
+        await RefreshData();
+    }
+
+    private void ShowClosePositionDialog(ActivePositionViewModel pos)
+    {
+        closePositionDialogTitle = $"Close ${pos.Instrument} position: ${pos.Id}";
+        positionToClose = pos;
+        closePositionToken = "";
+        isEditInstrumentDialogVisible = true;
+    }
+
+    private void HideClosePositionDialog()
+    {
+        isEditInstrumentDialogVisible = false;
+    }
+
+    private async void ClosePosition()
+    {
+        if (positionToClose == null)
+        {
+            return;
+        }
+
+        if (closePositionToken != appSettings.AdminCrudApiKey)
+        {
+            snackbar.Add("Api Key is not valid", Severity.Error);
+            return;
+        }
+
+        var contract = new ClosePositionGrpcRequestContract
+        {
+            TraderId = positionToClose.TraderId,
+            AccountId = positionToClose.AccountId,
+            PositionId = positionToClose.Id,
+            ProcessId = "Dealing-Admin-" + Guid.NewGuid(),
+            Reason = CloseReasonGrpc.AdminAction
+        };
+
+        var grpcResponse = await LiveDemoServices.GetContext(AppState.IsLive)
+            .EngineApi.ClosePositionAsync(contract);
+
+        snackbar.Add($"Close Position - API result: {grpcResponse.Result.ToString()}", Severity.Info);
+
+        isEditInstrumentDialogVisible = false;
+    }
+
+    private async Task RefreshData()
+    {
+        if (isLoading)
+        {
+            snackbar.Add($"Data refresh for Active Positions in progress");
+            return;
+        }
+
+        isLoading = true;
+
+        try
+        {
+            if (String.IsNullOrEmpty(AccountId))
+            {
+                var activePositions = LiveDemoServices.GetContext(AppState.IsLive).ActiveOrdersReader.GetAllPendingOrders();
+
+                GridData = (await AccTypeFilter.FilterPositions(activePositions, AccountsTypeFilter))
+                    .Select(x => ActivePositionViewModel.Create(x, 
+                        InstrumentsCache.Get(x.Instrument)?.Digits ?? 2)).ToList();
+            }
+            else
+            {
+                var accActivePositions = LiveDemoServices.GetContext(AppState.IsLive)
+                    .ActiveOrdersReader.GetTraderPendingOrders(AccountId);
+
+                GridData = accActivePositions.Select(x => ActivePositionViewModel.Create(x,
+                    InstrumentsCache.Get(x.Instrument)?.Digits ?? 2)).ToList();
+            }
+        }
+        catch(Exception ex)
+        {
+            logger.Error(ex, ex.Message);
+            snackbar.Add($"Error occured while loading data", Severity.Error);
+        }
+        finally
+        {
+             isLoading = false;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private string GetOrderTakeProfit(ActivePositionViewModel order)
+    {
+        if (order.TakeProfitInCurrency.HasValue) {
+            return order.TakeProfitInCurrency.Value.ToString("F2");
+        }
+
+        if (order.TakeProfitRate.HasValue) {
+            return $"rate: ${order.TakeProfitRate.Value.ToString("F2")}";
+        }
+
+        return "-";
+    }
+
+    private string GetOrderStopLoss(ActivePositionViewModel order)
+    {
+        if (order.StopLossInCurrency.HasValue) {
+            return order.StopLossInCurrency.Value.ToString("F2");
+        }
+
+        if (order.StopLossRate.HasValue) {
+             return $"rate: ${order.StopLossRate.Value.ToString("F2")}";
+        }
+
+        return "-";
+    }
+
+    private string GetOrderSwaps(ActivePositionViewModel order)
+    {
+        if (order.Swaps != null && order.Swaps.Any()) {
+            return order.Swaps.Sum(x => x.Profit).ToString("F2");
+        }
+      
+        return "0.00";
+    }
+}

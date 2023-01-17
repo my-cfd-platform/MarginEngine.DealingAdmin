@@ -1,0 +1,19 @@
+@page "/InstrumentSettings"
+
+@using AntDesign
+@using DealingAdmin.Components.Instruments
+
+<Tabs Size="@TabSize.Large">
+    <TabPane Tab="INSTRUMENTS" Key="Instruments" Class="tab-text">
+        <InstrumentsTab/>
+	</TabPane>
+    <TabPane Tab="AVATARS" Key="Avatars" Class="tab-text">
+        <InstrumentAvatarsTab/>
+	</TabPane>    
+    <TabPane Tab="INSTRUMENTS GROUPS" Key="InstrumentGroups" Class="tab-text">
+        <InstrumentGroupsTab/>
+    </TabPane>
+    <TabPane Tab="INSTRUMENTS SUBGROUPS" Key="InstrumentSubGroups" Class="tab-text">
+       <InstrumentSubGroupsTab/>
+    </TabPane>
+</Tabs>

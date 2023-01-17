@@ -1,0 +1,130 @@
+@using DealingAdmin.Abstractions
+@using DealingAdmin.Abstractions.Models
+@using Microsoft.AspNetCore.Components
+@using SimpleTrading.Abstraction.Trading.InstrumentsGroup
+@using SimpleTrading.Abstraction.Trading.Settings
+@using SimpleTrading.Abstraction.Trading.Swaps
+@using SimpleTrading.Abstractions.Common.InstrumentsAvatar
+@using SimpleTrading.Common.MyNoSql.InstrumentsAvatar
+
+@inject AdminAppSettings appSettings
+@inject ISnackbar snackbar
+
+<Form @ref="editForm"
+        Model="Instrument" 
+        ValidateOnChange="@false"
+        ValidateMode="@FormValidateMode.Rules"
+        LabelColSpan="6"
+        WrapperColSpan="18">
+    <Validator>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </Validator>
+    <ChildContent>
+        <FormItem Label="Id" Required Rules=@RequiredRule>
+            <Input @bind-Value="@context.Id" Placeholder="Instrument Id" Disabled="@(!String.IsNullOrEmpty(context.Id))"/>
+        </FormItem>            
+        <FormItem Label="Weight" Required>
+            <Input @bind-Value="@context.Weight" TValue="int?" Placeholder="Weight" />
+        </FormItem>
+        <FormItem Label="Name" Required Rules=@RequiredRule>
+            <Input @bind-Value="@context.Name" Placeholder="Name" />
+        </FormItem>
+        <FormItem Label="Base" Required Rules=@RequiredRule>
+            <Input @bind-Value="@context.Base" Placeholder="Base" />
+        </FormItem>
+        <FormItem Label="Quote" Required Rules=@RequiredRule>
+            <Input @bind-Value="@context.Quote" Placeholder="Quote" />
+        </FormItem>
+        <FormItem Label="Digits" Required>
+            <Input @bind-Value="@context.Digits" TValue="int" Placeholder="Digits" />
+        </FormItem>
+        <FormItem Label="TickSize" Required>
+            <Input @bind-Value="@context.TickSize" TValue="double" Placeholder="Tick Size" />
+        </FormItem>
+        <FormItem Label="Swap Schedule">
+            <Select @bind-Value="@Instrument.SwapScheduleId"
+                    TItemValue="string"
+                    TItem="string">
+                <SelectOptions>
+                    @foreach (var item in SwapProfiles.Where(x => x.InstrumentId == Instrument.Id))
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value=@item.Id Label=@($"[{item.Id}] Long:{item.Long} Short:{item.Short}")/>
+                    }
+                </SelectOptions>
+            </Select>
+        </FormItem>
+        <FormItem Label="Trading Group" Required Rules=@RequiredRule >
+             <Select @bind-Value="@Instrument.GroupId"
+                    TItemValue="string"
+                    TItem="string">
+                <SelectOptions>
+                    @foreach (var item in InstrumentGroups)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value=@item.Id Label=@item.Name/>
+                    }
+                </SelectOptions>
+            </Select>
+        </FormItem>
+        <AntDesign.Row Class="center-middle py-3">
+            <Col Span="6">
+                Days Off
+            </Col>
+            <Col Span="18">
+                 <DaysOffEditor @bind-Instrument="@Instrument"/>
+            </Col>   
+        </AntDesign.Row>
+        <FormItem Label="Day Timeout">
+            <Input @bind-Value="@context.DayTimeout" TValue="int?" Placeholder="Day Timeout" />
+        </FormItem>
+        <FormItem Label="Night Timeout">
+            <Input @bind-Value="@context.NightTimeout" TValue="int?" Placeholder="Night Timeout" />
+        </FormItem>
+        <FormItem Label="API Key" Required  Rules=@CrudApiKeyRule>
+            <InputPassword @bind-Value="@context.TokenKey" />
+        </FormItem>
+    </ChildContent>
+</Form>
+ 
+@code {
+    [Parameter]
+    public TradingInstrumentViewModel Instrument { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<TradingInstrumentViewModel> InstrumentChanged { get; set; }
+
+    [Parameter]
+    public IEnumerable<ISwapProfile> SwapProfiles { get; set; }
+
+    [Parameter]
+    public IEnumerable<IInstrumentGroup> InstrumentGroups { get; set; }
+
+    [Parameter]
+    public IEnumerable<IInstrumentSubGroup> SubGroups { get; set; }
+
+    AntDesign.Form<TradingInstrumentViewModel> editForm;
+
+    private FormValidationRule[] RequiredRule = { new FormValidationRule { Required = true } };
+    private FormValidationRule[] CrudApiKeyRule;
+
+    protected override void OnInitialized()
+    {
+        CrudApiKeyRule = new FormValidationRule[]
+        {
+            new FormValidationRule
+            {
+                Required = true,
+                Type = FormFieldType.String,
+                OneOf = new string[] { appSettings.AdminCrudApiKey },
+                Message = "API Key is not valid"
+            }
+        };
+        
+        base.OnInitialized();
+    }
+
+    public bool ValidateEditForm()
+    {
+        return editForm.Validate();
+    }
+}
+
