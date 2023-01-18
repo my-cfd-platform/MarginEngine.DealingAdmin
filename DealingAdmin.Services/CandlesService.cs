@@ -385,8 +385,8 @@ namespace DealingAdmin.Services
                 var cacheRequest = new GetCandlesHistoryGrpcRequestContract
                 {
                     Instrument = instrumentId,
-                    From = dateFrom,
-                    To = dateTo,
+                    From = (ulong) dateFrom.UnixTime(),
+                    To = (ulong) dateTo.UnixTime(),
                     CandleType = candleType,
                     Bid = true
                 };
@@ -415,7 +415,7 @@ namespace DealingAdmin.Services
                     foreach (var candle in candles)
                     {
                         scannedCount++;
-                        var cacheCorrespCandles = cacheCandles.Where(x => x.DateTime == candle.DateTime);
+                        var cacheCorrespCandles = cacheCandles.Where(x => x.DateTime == (ulong) candle.DateTime.UnixTime());
 
                         if (cacheCorrespCandles.Any())
                         {
@@ -509,8 +509,8 @@ namespace DealingAdmin.Services
                 var cacheRequest = new GetCandlesHistoryGrpcRequestContract
                 {
                     Instrument = instrumentId,
-                    From = dateTime,
-                    To = dateTime,
+                    From = (ulong) dateTime.UnixTime(),
+                    To = (ulong) dateTime.UnixTime(),
                     CandleType = candleType,
                     Bid = isBid
                 };
@@ -523,7 +523,7 @@ namespace DealingAdmin.Services
 
                     return new CandleModel
                     {
-                        DateTime = candleGrpc.DateTime,
+                        DateTime = ((long) candleGrpc.DateTime).UnixTimeToDateTime(),
                         Open = candleGrpc.Open,
                         Close = candleGrpc.Close,
                         High = candleGrpc.High,
