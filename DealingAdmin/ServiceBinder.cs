@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Services;
 using DealingAdmin.Shared.Services;
 using DealingAdmin.Shared.Services.Providers;
+using DealingAdmin.Shared.Services.Providers.Interfaces;
+using DealingAdmin.Validators;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MyNoSqlServer.DataReader;
@@ -14,32 +14,31 @@ using Serilog;
 using SimpleTrading.Abstraction.BidAsk;
 using SimpleTrading.Abstraction.Caches.ActiveOrders;
 using SimpleTrading.Abstraction.Candles;
-using SimpleTrading.Abstraction.Trading.Settings;
-using SimpleTrading.CandlesHistory.AzureStorage;
-using SimpleTrading.CandlesHistory.Grpc;
-using SimpleTrading.MyNoSqlRepositories;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
-using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
-using SimpleTrading.Common.MyNoSql;
-using SimpleTrading.QuotesFeedRouter.Abstractions;
-using SimpleTrading.Auth.Grpc;
-using SimpleTrading.Engine.Grpc;
+using SimpleTrading.Abstraction.Markups;
+using SimpleTrading.Abstraction.Markups.TradingGroupMarkupProfiles;
 using SimpleTrading.Abstraction.Trading;
-using SimpleTrading.PersonalData.Grpc;
-using DealingAdmin.Validators;
-using SimpleTrading.TradeLog.Grpc;
 using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.InstrumentsGroup;
-using SimpleTrading.Abstractions.Common.InstrumentsAvatar;
 using SimpleTrading.Abstraction.Trading.Profiles;
+using SimpleTrading.Abstraction.Trading.Settings;
 using SimpleTrading.Abstraction.Trading.Swaps;
-using SimpleTrading.Abstraction.Markups;
-using SimpleTrading.Common.Abstractions.DefaultValues;
-using SimpleTrading.ClientApi.Services;
-using SimpleTrading.Abstraction.Markups.TradingGroupMarkupProfiles;
-using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.Admin.Grpc;
-using DealingAdmin.Shared.Services.Providers.Interfaces;
+using SimpleTrading.Auth.Grpc;
+using SimpleTrading.CandlesHistory.AzureStorage;
+using SimpleTrading.CandlesHistory.Grpc;
+using SimpleTrading.ClientApi.Services;
+using SimpleTrading.Common.Abstractions.DefaultValues;
+using SimpleTrading.Common.MyNoSql;
+using SimpleTrading.Engine.Grpc;
+using SimpleTrading.MyNoSqlRepositories;
+using SimpleTrading.PersonalData.Grpc;
+using SimpleTrading.QuotesFeedRouter.Abstractions;
+using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
+using SimpleTrading.TickHistory.Grpc;
+using SimpleTrading.TradeLog.Grpc;
+using System;
+using System.Collections.Generic;
 
 namespace DealingAdmin
 {
@@ -81,7 +80,7 @@ namespace DealingAdmin
     public class AdminAppSettings
     {
         public string ChangeBalanceApiKey { get; set; }
-        
+
         public string AdminCrudApiKey { get; set; }
     }
 
@@ -112,7 +111,7 @@ namespace DealingAdmin
 
             services.AddScoped<StateManager>();
             services.AddScoped<ICandlesService, CandlesService>();
-            services.AddScoped<ISwapProfileUploadService, SwapProfileUploadService>();            
+            services.AddScoped<ISwapProfileUploadService, SwapProfileUploadService>();
             services.AddSingleton<IPriceAggregator, PriceAggregator>();
             services.AddSingleton<IPriceRetriever, PriceRetriever>();
             services.AddSingleton<IAccountTypeFilter, AccountTypeFilter>();
@@ -140,8 +139,17 @@ namespace DealingAdmin
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
             services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
 
+            #region Instrument Mapping
+
+            // Cache
+            // services.AddSingleton<IInstrumentMappingCache>(new InstrumentMappingCache(tcpConnection));
+            
+            // Repository
             services.AddSingleton<IInstrumentMappingRepository>(
-                new InstrumentMappingRepository(settingsModel.QuoteFeedRouterUrl));
+                new InstrumentMappingRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
             services.AddSingleton<ILiquidityProviderReader>(
                 new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
             services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(

@@ -2,6 +2,7 @@
 @using DealingAdmin.Abstractions.Models
 @using DealingAdmin.Abstractions.Models.LpSettings
 @using DealingAdmin.Shared.Services.Providers.Interfaces
+@using DealingAdmin.Shared.Services.Providers.Models
 @using Newtonsoft.Json
 @using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Common.Abstractions.Images
@@ -12,6 +13,7 @@
 @* Injects *@
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
 @inject ITradingInstrumentsRepository InstrumentsRepository
+@*@inject IInstrumentMappingCache InstrumentMappingCache*@
 @inject IInstrumentMappingRepository InstrumentMappingRepository
 @inject TradingInstrumentMyNoSqlRepository ImagesMyNoSqlRepository
 @inject InstrumentSourcesMapsMyNoSqlRepository SourcesMapsRepository
@@ -150,9 +152,9 @@
         new Dictionary<string, (bool edit, string)>();
 
     private List<InstrumentSourcesMapsMyNoSqlTableEntity> _sourcesMapsList;
-    private List<ProviderInstrumentMap> _mapsList;
-    private Dictionary<string, Dictionary<string, string>> _mapsDict;
+    private IEnumerable<IProviderInstrumentMap> _mapsList;
 
+    private Dictionary<string, IProviderInstrumentMap> _mapsDict;
     protected override async Task OnInitializedAsync()
     {
         await RefreshData();
@@ -166,8 +168,8 @@
         _isLoading = true;
         _defaultLp = await DefLiquidityProviderWriter.GetAsync();
         _sourcesMapsList = (await SourcesMapsRepository.GetAllAsync()).ToList();
-        _mapsList = (await InstrumentMappingRepository.GetAllAsync()).ToList();
-        _mapsDict = _mapsList.ToDictionary(k => k.LpId, v => v.Map);
+        _mapsList = await InstrumentMappingRepository.GetAllAsync();
+        _mapsDict = _mapsList.ToDictionary(k => k.LpId, v =>v);
 
         var instruments = await InstrumentsRepository.GetAllAsync();
 
@@ -176,11 +178,13 @@
         foreach (var inst in instruments)
         {
             var provider = GetLiquidityProviderIdForInstrument(inst.Id);
+            var defaultProvider = string.IsNullOrEmpty(provider);
+            provider = defaultProvider ? _defaultLp : provider;
             var mapName = GetInstrumentMapName(provider, inst.Id);
             _instrumentMappings.Add(InstrumentMappingViewModel.Create(
                 inst,
-                string.IsNullOrEmpty(provider) ? _defaultLp : provider,
-                string.IsNullOrEmpty(provider),
+                provider,
+                defaultProvider,
                 mapName));
         }
 
@@ -198,8 +202,8 @@
 
     private string GetInstrumentMapName(string providerId, string instrumentId)
     {
-        return _mapsDict.ContainsKey(providerId) && _mapsDict[providerId].ContainsKey(instrumentId) ?
-            _mapsDict[providerId][instrumentId] :
+        return _mapsDict.ContainsKey(providerId) && _mapsDict[providerId].Map.ContainsKey(instrumentId) ?
+            _mapsDict[providerId].Map[instrumentId] :
             string.Empty;
     }
 
@@ -207,36 +211,60 @@
 
     #region Storage Functions
 
-    private bool SaveToStorage(InstrumentMappingViewModel item)
+    private void SaveProvider(string providerId)
     {
-
-        return false;
+        InstrumentMappingRepository.UpdateAsync(_mapsDict[providerId]);
     }
+
     #endregion
 
     #region Layout Functions
 
-    void StartEdit(InstrumentMappingViewModel item)
+    private void StartEdit(InstrumentMappingViewModel item)
     {
         item.PreEditMapName = item.MapName;
         item.BeingEdited = true;
     }
 
-    void CancelEdit(InstrumentMappingViewModel item)
+    private void CancelEdit(InstrumentMappingViewModel item)
     {
         item.BeingEdited = false;
         item.MapName = item.PreEditMapName; // recovery
     }
 
-    void SaveEdit(InstrumentMappingViewModel item)
+    private void SaveEdit(InstrumentMappingViewModel item)
     {
-        //todo save to storage
+        // check if provider exists
+        if (!_mapsDict.ContainsKey(item.LiquidityProviderId))
+        {
+            var entity = ProviderInstrumentMapMyNoSqlEntity.Create(new ProviderInstrumentMapMyNoSqlEntity
+            {
+                LpId = item.LiquidityProviderId,
+                Map = new Dictionary<string, string>()
+            });
+            _mapsDict.Add(item.LiquidityProviderId, entity);
+        }
+
+        _mapsDict[item.LiquidityProviderId].Map[item.InstrumentId] = item.MapName;
+
+        SaveProvider(item.LiquidityProviderId);
         item.BeingEdited = false;
     }
 
-    void Delete(InstrumentMappingViewModel item)
+
+
+    private void Delete(InstrumentMappingViewModel item)
     {
-        //todo delete from storage
+        if (!_mapsDict.ContainsKey(item.LiquidityProviderId))
+        {
+            return;
+        }
+        if (_mapsDict[item.LiquidityProviderId].Map.ContainsKey(item.InstrumentId))
+        {
+            _mapsDict[item.LiquidityProviderId].Map.Remove(item.InstrumentId);
+        }
+        
+        SaveProvider(item.LiquidityProviderId);
         item.MapName = string.Empty;
     }
 
