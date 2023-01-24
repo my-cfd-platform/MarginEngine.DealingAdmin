@@ -1,0 +1,249 @@
+﻿@* Usings *@
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Models.LpSettings
+@using DealingAdmin.Shared.Services.Providers.Interfaces
+@using Newtonsoft.Json
+@using SimpleTrading.Abstraction.Trading.Instruments
+@using SimpleTrading.Common.Abstractions.Images
+@using SimpleTrading.Common.Abstractions.InstrumentsAvatar
+@using SimpleTrading.Common.MyNoSql.InstrumentsAvatar
+@using SimpleTrading.MyNoSqlRepositories.InstrumentSourcesMaps
+@using SimpleTrading.QuotesFeedRouter.Abstractions
+@* Injects *@
+@inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
+@inject ITradingInstrumentsRepository InstrumentsRepository
+@inject IInstrumentMappingRepository InstrumentMappingRepository
+@inject TradingInstrumentMyNoSqlRepository ImagesMyNoSqlRepository
+@inject InstrumentSourcesMapsMyNoSqlRepository SourcesMapsRepository
+@* Layout *@
+<PageHeader Class="mb-2 p-0" Title="Liquidity Provider Instrument Mapping" />
+<Table DataSource="@_instrumentMappings"
+       TItem="InstrumentMappingViewModel"
+       Loading="@_isLoading"
+       Bordered="@true"
+       Total="0"
+       HidePagination="@true"
+       ScrollY="calc(100vh - 200px)"
+       PageSize="999">
+    <RowTemplate>
+        <AntDesign.Column Title="Liquidity Provider"
+                          TData="string"
+                          DataIndex="LiquidityProviderId"
+                          Width="100"
+                          Sortable
+                          Filterable>
+            <Tag Class="@GetLiquidityProviderTagClass(@context.DefaultLiquidityProvider)">
+                @(context.LiquidityProviderId)
+            </Tag>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Id"
+                          TData="string"
+                          DataIndex="InstrumentId"
+                          Width="180"
+                          Sortable
+                          Filterable>
+            <p>Id: <b>@context.InstrumentId</b></p>
+            <p>Name: <b>@context.InstrumentName</b></p>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Group"
+                          TData="string"
+                          DataIndex="GroupId"
+                          Sortable
+                          Width="90"
+                          Filterable>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Base"
+                          DataIndex="Base"
+                          TData="string"
+                          Sortable
+                          Width="80"
+                          Filterable>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Map Name"
+                          DataIndex="MapName"
+                          TData="string"
+                          Sortable
+                          Width="130"
+                          Filterable>
+            @if (!context.BeingEdited)
+            {
+                if (!string.IsNullOrWhiteSpace(context.MapName))
+                {
+                    <Tag PresetColor="PresetColor.Purple">@context.MapName</Tag>
+                }
+            }
+            else
+            {
+                <Input @bind-Value="context.MapName"/>
+            }
+        </AntDesign.Column>
+        <AntDesign.Column Title="Quote"
+                          DataIndex="Quote"
+                          TData="string"
+                          Sortable
+                          Width="80"
+                          Filterable>
+        </AntDesign.Column>
+        <ActionColumn Title="Action" Width="80">
+            @if (!context.BeingEdited)
+            {
+                if (string.IsNullOrWhiteSpace(context.MapName))
+                {
+                    <Tooltip Title="@("Set")">
+                        <a>
+                            <i @onclick="() => StartEdit(context)"
+                               class="material-icons color-green">add_link</i>
+                        </a>
+                    </Tooltip>
+                }
+                else
+                {
+                    <Popconfirm Title="@("OK to delete?")"
+                                OnConfirm="() => Delete(context)"
+                                OkText="Yes"
+                                CancelText="No">
+                        <Tooltip Title="@("Delete")">
+                            <a>
+                                <i class="material-icons color-darkred">link_off</i>
+                            </a>
+                        </Tooltip>
+                    </Popconfirm>
+                }
+            }
+            else
+            {
+                <Tooltip Title="@("Save")">
+                    <Popconfirm Title="@("OK to save?")"
+                                OnConfirm="() => SaveEdit(context)"
+                                OkText="Yes"
+                                CancelText="No">
+                        <a>
+                                <i class="material-icons color-green">check_circle_outline</i>
+                        </a>
+                    </Popconfirm>
+                </Tooltip>
+                <Tooltip Title="@("Cancel")">
+                    <Popconfirm Title="@("OK to cancel?")"
+                                OnConfirm="() => CancelEdit(context)"
+                                OkText="Yes"
+                                CancelText="No">
+                        <a>
+                                <i class="material-icons color-darkred">block</i>
+                        </a>
+                    </Popconfirm>
+                </Tooltip>
+            }
+        </ActionColumn>
+        <AntDesign.Column Title=""
+                          TData="string">
+        </AntDesign.Column>
+    </RowTemplate>
+</Table>
+
+@code {
+    private List<InstrumentMappingViewModel> _instrumentMappings;
+
+    private bool _isLoading = false;
+    private string _defaultLp;
+
+    IDictionary<string, (bool edit, string)> _editCache =
+        new Dictionary<string, (bool edit, string)>();
+
+    private List<InstrumentSourcesMapsMyNoSqlTableEntity> _sourcesMapsList;
+    private List<ProviderInstrumentMap> _mapsList;
+    private Dictionary<string, Dictionary<string, string>> _mapsDict;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+        await base.OnInitializedAsync();
+    }
+
+    #region Code Functions
+
+    private async Task RefreshData()
+    {
+        _isLoading = true;
+        _defaultLp = await DefLiquidityProviderWriter.GetAsync();
+        _sourcesMapsList = (await SourcesMapsRepository.GetAllAsync()).ToList();
+        _mapsList = (await InstrumentMappingRepository.GetAllAsync()).ToList();
+        _mapsDict = _mapsList.ToDictionary(k => k.LpId, v => v.Map);
+
+        var instruments = await InstrumentsRepository.GetAllAsync();
+
+        _instrumentMappings = new List<InstrumentMappingViewModel>();
+
+        foreach (var inst in instruments)
+        {
+            var provider = GetLiquidityProviderIdForInstrument(inst.Id);
+            var mapName = GetInstrumentMapName(provider, inst.Id);
+            _instrumentMappings.Add(InstrumentMappingViewModel.Create(
+                inst,
+                string.IsNullOrEmpty(provider) ? _defaultLp : provider,
+                string.IsNullOrEmpty(provider),
+                mapName));
+        }
+
+        _isLoading = false;
+    }
+
+    private string GetLiquidityProviderIdForInstrument(string instrumentId)
+    {
+        var overwrittenProviderId = _sourcesMapsList.FirstOrDefault(x => x.InstrumentId == instrumentId)?.SourceId;
+
+        return string.IsNullOrEmpty(overwrittenProviderId)
+            ? string.Empty
+            : overwrittenProviderId;
+    }
+
+    private string GetInstrumentMapName(string providerId, string instrumentId)
+    {
+        return _mapsDict.ContainsKey(providerId) && _mapsDict[providerId].ContainsKey(instrumentId) ?
+            _mapsDict[providerId][instrumentId] :
+            string.Empty;
+    }
+
+    #endregion
+
+    #region Storage Functions
+
+    private bool SaveToStorage(InstrumentMappingViewModel item)
+    {
+
+        return false;
+    }
+    #endregion
+
+    #region Layout Functions
+
+    void StartEdit(InstrumentMappingViewModel item)
+    {
+        item.PreEditMapName = item.MapName;
+        item.BeingEdited = true;
+    }
+
+    void CancelEdit(InstrumentMappingViewModel item)
+    {
+        item.BeingEdited = false;
+        item.MapName = item.PreEditMapName; // recovery
+    }
+
+    void SaveEdit(InstrumentMappingViewModel item)
+    {
+        //todo save to storage
+        item.BeingEdited = false;
+    }
+
+    void Delete(InstrumentMappingViewModel item)
+    {
+        //todo delete from storage
+        item.MapName = string.Empty;
+    }
+
+    private string GetLiquidityProviderTagClass(bool isDefaultProvider)
+    {
+        return isDefaultProvider ? "btn-text tag-color-gray" : "btn-text tag-color-orange";
+    }
+
+    #endregion
+}

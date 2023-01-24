@@ -1,3 +1,4 @@
+using System;
 using DealingAdmin;
 using DealingAdmin.Shared.Services;
 using Microsoft.AspNetCore.Builder;
@@ -11,7 +12,12 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 var liveDemoManager = new LiveDemoServiceMapper();
+
+#if DEBUG
+var settingsModel = SettingsReader.ReadSettings<SettingsModel>(".settings.yaml");
+#else
 var settingsModel = SettingsReader.ReadSettings<SettingsModel>();
+#endif
 
 // Add services to the container
 builder.Services.AddApplicationInsightsTelemetry();

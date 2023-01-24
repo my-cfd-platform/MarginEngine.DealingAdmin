@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Services;
 using DealingAdmin.Shared.Services;
+using DealingAdmin.Shared.Services.Providers;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MyNoSqlServer.DataReader;
@@ -38,6 +39,7 @@ using SimpleTrading.ClientApi.Services;
 using SimpleTrading.Abstraction.Markups.TradingGroupMarkupProfiles;
 using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.Admin.Grpc;
+using DealingAdmin.Shared.Services.Providers.Interfaces;
 
 namespace DealingAdmin
 {
@@ -137,7 +139,11 @@ namespace DealingAdmin
             // ST Services (to be replaced in the future)
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
             services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
-            services.AddSingleton<ILiquidityProviderReader>(new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
+
+            services.AddSingleton<IInstrumentMappingRepository>(
+                new InstrumentMappingRepository(settingsModel.QuoteFeedRouterUrl));
+            services.AddSingleton<ILiquidityProviderReader>(
+                new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
             services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton((IDefaultValuesRepository)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(
