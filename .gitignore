@@ -8,3 +8,4 @@
 **/obj
 **/app
 **/node_modules
+.settings.yaml
