@@ -139,6 +139,8 @@ namespace DealingAdmin
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
             services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
 
+            #region Data Providers
+            
             #region Instrument Mapping
 
             // Cache
@@ -152,13 +154,12 @@ namespace DealingAdmin
 
             #region Price Router Lp Source
 
-            // Cache
-            // services.AddSingleton<IInstrumentMappingCache>(new InstrumentMappingCache(tcpConnection));
-            
             // Repository
             services.AddSingleton<IRepository<IProviderRouterSource>>(
                 new ProviderRouterSourceRepository(settingsModel.DictionariesMyNoSqlServerWriter));
 
+            #endregion
+            
             #endregion
 
             services.AddSingleton<ILiquidityProviderReader>(
