@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace DealingAdmin.Shared.Services.Providers.Interfaces;
+namespace DealingAdmin.Abstractions.Providers.Interfaces;
 
 public interface IProviderInstrumentMap
 {

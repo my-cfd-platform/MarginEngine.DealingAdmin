@@ -1,19 +1,17 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using DealingAdmin.Shared.Services.Providers.Interfaces;
-using DealingAdmin.Shared.Services.Providers.Models;
+﻿using DealingAdmin.Abstractions.Providers.Interfaces;
+using DealingAdmin.Services.Providers.Models;
 using MyNoSqlServer.Abstractions;
 using MyNoSqlServer.DataWriter;
 
-namespace DealingAdmin.Shared.Services.Providers;
+namespace DealingAdmin.Services.Providers;
 
-public class InstrumentMappingRepository : IInstrumentMappingRepository
+public class InstrumentMappingRepository : IRepository<IProviderInstrumentMap>
 {
-    private readonly IMyNoSqlServerDataWriter<ProviderInstrumentMapMyNoSqlEntity> _table;
+    private readonly IMyNoSqlServerDataWriter<ProviderInstrumentEntity> _table;
     private const string TableName = "instrument-mapping";
     public InstrumentMappingRepository(string url)
     {
-        var table = new MyNoSqlServerDataWriter<ProviderInstrumentMapMyNoSqlEntity>(
+        var table = new MyNoSqlServerDataWriter<ProviderInstrumentEntity>(
             () => url,
             TableName,
             true);
@@ -24,13 +22,13 @@ public class InstrumentMappingRepository : IInstrumentMappingRepository
 
     public async Task<IEnumerable<IProviderInstrumentMap>> GetAllAsync()
     {
-        var partitionKey = ProviderInstrumentMapMyNoSqlEntity.GeneratePartitionKey();
+        var partitionKey = ProviderInstrumentEntity.GeneratePartitionKey();
         return await _table.GetAsync(partitionKey);
     }
 
     public async Task UpdateAsync(IProviderInstrumentMap item)
     {
-        var entity = ProviderInstrumentMapMyNoSqlEntity.Create(item);
+        var entity = ProviderInstrumentEntity.Create(item);
         await _table.InsertOrReplaceAsync(entity);
     }
 }
