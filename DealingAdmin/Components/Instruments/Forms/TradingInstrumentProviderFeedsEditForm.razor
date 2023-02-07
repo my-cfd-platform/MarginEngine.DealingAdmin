@@ -1,0 +1,101 @@
+@using DealingAdmin.Abstractions
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Shared.Models
+@using static DealingAdmin.Abstractions.Extensions.StringExtension
+@using Microsoft.AspNetCore.Components
+@using SimpleTrading.Abstraction.Trading.InstrumentsGroup
+@using SimpleTrading.Abstraction.Trading.Settings
+@using SimpleTrading.Abstraction.Trading.Swaps
+@using SimpleTrading.Abstractions.Common.InstrumentsAvatar
+@using SimpleTrading.Common.MyNoSql.InstrumentsAvatar
+
+@inject AdminAppSettings AppSettings
+@inject ISnackbar Snackbar
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
+
+<Button
+    OnClick="ShowCustomFromProvider">
+    Add
+</Button>
+<Button
+    OnClick="ShowCopyFromProvider">
+    Add From Provider
+</Button>
+
+<Form @ref="_editForm"
+      Model="Instrument" 
+      ValidateOnChange="@false"
+      ValidateMode="@FormValidateMode.Rules"
+      LabelColSpan="6"
+      WrapperColSpan="18">
+    <Validator>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </Validator>
+    <ChildContent>
+        <AntList DataSource="@Instrument.LpSymbolDictionary" Size="small" Bordered="@true">
+            <ChildContent Context="item">
+                <ListItem>
+                    <div class="start-middle">
+                        <Tag PresetColor="PresetColor.Lime">
+                            @item.Key @(" : ") @item.Value
+                        </Tag>
+                        <a @onclick="@(() => RemoveItem(item))"><i class="material-icons color-crimson mx-1">indeterminate_check_box</i></a>
+                    </div>
+                </ListItem>
+            </ChildContent>
+        </AntList>
+    </ChildContent>
+</Form>
+
+<InstrumentProviderFeed 
+    Title="Instrument Feed"
+    @bind-Visible="@_isCopyDialogVisible"
+    LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+    Copy="false"
+    Instrument="Instrument"
+/>
+
+<InstrumentCustomFeed 
+    Title="Instrument Feed"
+    @bind-Visible="@_isCustomDialogVisible"
+    LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+    Instrument="Instrument"
+/>
+@code {
+    [Parameter]
+    public TradingInstrumentViewModel Instrument { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<TradingInstrumentViewModel> InstrumentChanged { get; set; }
+    
+    [Parameter]
+    public List<ViewListItem> LiquidityProvidersViewList { get; set; }
+
+
+    Form<TradingInstrumentViewModel> _editForm;
+
+    private bool _isCopyDialogVisible;
+    private bool _isCustomDialogVisible;
+
+    #region Layout Functions
+
+    private void ShowCopyFromProvider()
+    {
+        _isCopyDialogVisible = true;
+    }
+
+    private void ShowCustomFromProvider()
+    {
+        _isCustomDialogVisible = true;
+    }
+
+    private void RemoveItem(KeyValuePair<string, string> item )
+    {
+        Instrument.LpSymbolDictionary.Remove(item.Key);
+        Instrument.LpSymbolDictionaryDelete.Add(item.Key, item.Value);
+    }
+    #endregion
+}
+

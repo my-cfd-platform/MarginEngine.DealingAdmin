@@ -32,36 +32,35 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 180px)"
        PageSize="999">
-    <RowTemplate>
-        <AntDesign.Column Title="Group"
-                DataIndex="GroupId"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Id"
-                DataIndex="Id"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Name"
-                DataIndex="Name"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Weight"
-                DataIndex="Weight" 
-                TData="int"
-                Sortable/>
-        <ActionColumn Title="Edit" Width="120">            
-            <Tooltip Title="@("Edit")">
-                <a><i @onclick="()=>ShowEditGroupDialog(context)"
-                    class="material-icons color-primary">edit</i></a>
-            </Tooltip>
-            <Tooltip Title="@("Delete")">
-                <Popconfirm Title="Are you sure?" OkText="Confirm" CancelText="Cancel">
-                    <a><i @onclick="()=>DeleteSubGroup(context)"
-                        class="material-icons color-crimson">delete_outline</i></a>
-                </Popconfirm>
-            </Tooltip>
-        </ActionColumn>
-    </RowTemplate>
+
+    <AntDesign.Column Title="Group"
+            DataIndex="GroupId"
+            TData="string"
+            Sortable/>
+    <AntDesign.Column Title="Id"
+            DataIndex="Id"
+            TData="string"
+            Sortable/>
+    <AntDesign.Column Title="Name"
+            DataIndex="Name"
+            TData="string"
+            Sortable/>
+    <AntDesign.Column Title="Weight"
+            DataIndex="Weight" 
+            TData="int"
+            Sortable/>
+    <ActionColumn Title="Edit" Width="120">            
+        <Tooltip Title="@("Edit")">
+            <a><i @onclick="()=>ShowEditGroupDialog(context)"
+                class="material-icons color-primary">edit</i></a>
+        </Tooltip>
+        <Tooltip Title="@("Delete")">
+            <Popconfirm Title="Are you sure?" OkText="Confirm" CancelText="Cancel">
+                <a><i @onclick="()=>DeleteSubGroup(context)"
+                    class="material-icons color-crimson">delete_outline</i></a>
+            </Popconfirm>
+        </Tooltip>
+    </ActionColumn>
 </Table>
 </div>
 

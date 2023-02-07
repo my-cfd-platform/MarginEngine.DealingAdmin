@@ -28,31 +28,29 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 120px)"
        PageSize="999">
-    <RowTemplate>           
-        <AntDesign.Column Title="Id"
-                DataIndex="Id"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Name"
-                DataIndex="Name"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Trading Profile Id" 
-                DataIndex="TradingProfileId" 
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Markup Profile Id"
-                DataIndex="MarkupProfileId" 
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Swap Profile Id"
-                DataIndex="SwapProfileId"
-                TData="string"/>
-        <ActionColumn Title="Edit" Width="60">
-                <a><i @onclick="()=>ShowEditGroupDialog(context)"
-                    class="material-icons color-primary">edit</i></a>
-        </ActionColumn>
-    </RowTemplate>
+    <AntDesign.Column Title="Id"
+                      DataIndex="Id"
+                      TData="string"
+                      Sortable/>
+    <AntDesign.Column Title="Name"
+                      DataIndex="Name"
+                      TData="string"
+                      Sortable/>
+    <AntDesign.Column Title="Trading Profile Id" 
+                      DataIndex="TradingProfileId" 
+                      TData="string"
+                      Sortable/>
+    <AntDesign.Column Title="Markup Profile Id"
+                      DataIndex="MarkupProfileId" 
+                      TData="string"
+                      Sortable/>
+    <AntDesign.Column Title="Swap Profile Id"
+                      DataIndex="SwapProfileId"
+                      TData="string"/>
+    <ActionColumn Title="Edit" Width="60">
+            <a><i @onclick="()=>ShowEditGroupDialog(context)"
+                class="material-icons color-primary">edit</i></a>
+    </ActionColumn>
 </Table>
 
 <Modal Title="@groupEditFormTitle"

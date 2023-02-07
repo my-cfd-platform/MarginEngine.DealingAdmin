@@ -73,8 +73,7 @@
            ScrollY="calc(100vh - 260px)"
            @bind-PageIndex="_pageIndex"
            @bind-PageSize="_pageSize">
-        <RowTemplate> 
-            <AntDesign.Column Ellipsis
+        <AntDesign.Column Ellipsis
                     TData="long"
                     Title="Id"
                     @bind-Field="@context.Id"
@@ -168,7 +167,6 @@
                     <span class="simple-badge @(GetOrderProfitBadgeColor(context.Profit))">@GetOrderNetProfit(context)</span>
                 </div>
             </AntDesign.Column>
-        </RowTemplate>
     </Table>
 </div>
 

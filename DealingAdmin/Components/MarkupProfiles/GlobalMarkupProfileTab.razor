@@ -24,23 +24,22 @@
            HidePagination="@true"
            ScrollY="calc(100vh - 180px)"
            PageSize="999">
-        <RowTemplate>           
+          
             <AntDesign.Column Title="Global Markup Profile"
                 DataIndex="ProfileId"
                 TData="string"
                 Sortable
                 Width="200"/>
             <AntDesign.Column Title="Instruments" TData="string">   
-                @foreach (var instrument in context.MarkupInstruments)
+                    @foreach (var instrument in context.MarkupInstruments)
                 {
                     <Tag PresetColor="PresetColor.Purple">@instrument.InstrumentId</Tag>
                 }
             </AntDesign.Column>
             <ActionColumn Title="Edit" Width="60">
-                <a><i @onclick="()=>ShowEditProfile(context)"
+                    <a><i @onclick="()=>ShowEditProfile(context)"
                     class="material-icons color-primary">edit</i></a>
             </ActionColumn>
-        </RowTemplate>
     </Table>
 }
 else

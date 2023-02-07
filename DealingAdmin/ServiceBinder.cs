@@ -1,8 +1,6 @@
 using DealingAdmin.Abstractions;
 using DealingAdmin.Services;
 using DealingAdmin.Shared.Services;
-using DealingAdmin.Shared.Services.Providers;
-using DealingAdmin.Shared.Services.Providers.Interfaces;
 using DealingAdmin.Validators;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +37,8 @@ using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.TradeLog.Grpc;
 using System;
 using System.Collections.Generic;
+using DealingAdmin.Abstractions.Providers.Interfaces;
+using DealingAdmin.Services.Providers;
 
 namespace DealingAdmin
 {
@@ -139,14 +139,33 @@ namespace DealingAdmin
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
             services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
 
+            #region Data Providers
+            
             #region Instrument Mapping
 
             // Cache
             // services.AddSingleton<IInstrumentMappingCache>(new InstrumentMappingCache(tcpConnection));
             
             // Repository
-            services.AddSingleton<IInstrumentMappingRepository>(
+            services.AddSingleton<IRepository<IProviderInstrumentMap>>(
                 new InstrumentMappingRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
+            #region Price Router Lp Source
+
+            // Repository
+            services.AddSingleton<IRepository<IProviderRouterSource>>(
+                new ProviderRouterSourceRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
+            #region Providers Instrument Info
+
+            // Repository
+            services.AddSingleton<IProviderInstrumentsInfoService, ProviderInstrumentsInfoService>();
+
+            #endregion
 
             #endregion
 

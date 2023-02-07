@@ -1,4 +1,5 @@
 using SimpleTrading.Abstraction.Trading.Instruments;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DealingAdmin.Abstractions.Models
@@ -8,6 +9,19 @@ namespace DealingAdmin.Abstractions.Models
         public string LiquidityProviderId { get; set; }
 
         public bool DefaultLiquidityProvider { get; set; } = true;
+
+        #region Instrument Mapping Modal
+        public bool IsNew { get; init; } = true;
+        public bool IsModified { get; set; } = false;
+        #endregion
+
+        #region Helpers
+        public bool IsSelected { get; set; } = false;
+        public List<TradingInstrumentDayOffModel> DaysOffSave { get; set; }
+        public Dictionary<string, string> LpSymbolDictionary { get; set; } = new ();
+        public Dictionary<string, string> LpSymbolDictionarySave { get; set; }
+        public Dictionary<string, string> LpSymbolDictionaryDelete { get; set; } = new();
+        #endregion
 
         public static TradingInstrumentViewModel Create(
             ITradingInstrument src,
@@ -32,7 +46,10 @@ namespace DealingAdmin.Abstractions.Models
                 DaysOff = src.DaysOff.Select(TradingInstrumentDayOffModel.Create).ToList(),
                 MarginCallPercent = src.MarginCallPercent,
                 LiquidityProviderId = liquidityProviderId,
-                DefaultLiquidityProvider = isDefaultLiquidityProvider
+                DefaultLiquidityProvider = isDefaultLiquidityProvider,
+                #region Helpers
+                IsNew = false
+                #endregion
             };
         }
     }

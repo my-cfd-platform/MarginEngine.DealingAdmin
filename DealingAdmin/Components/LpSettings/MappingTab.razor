@@ -1,8 +1,8 @@
 ﻿@* Usings *@
 @using DealingAdmin.Abstractions.Models
 @using DealingAdmin.Abstractions.Models.LpSettings
-@using DealingAdmin.Shared.Services.Providers.Interfaces
-@using DealingAdmin.Shared.Services.Providers.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Abstractions.Providers.Models
 @using Newtonsoft.Json
 @using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Common.Abstractions.Images
@@ -14,7 +14,7 @@
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
 @inject ITradingInstrumentsRepository InstrumentsRepository
 @*@inject IInstrumentMappingCache InstrumentMappingCache*@
-@inject IInstrumentMappingRepository InstrumentMappingRepository
+@inject IRepository<IProviderInstrumentMap> InstrumentMappingRepository
 @inject TradingInstrumentMyNoSqlRepository ImagesMyNoSqlRepository
 @inject InstrumentSourcesMapsMyNoSqlRepository SourcesMapsRepository
 @* Layout *@
@@ -27,7 +27,7 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 200px)"
        PageSize="999">
-    <RowTemplate>
+
         <AntDesign.Column Title="Liquidity Provider"
                           TData="string"
                           DataIndex="LiquidityProviderId"
@@ -93,7 +93,7 @@
                 {
                     <Tooltip Title="@("Set")">
                         <a>
-                            <i @onclick="() => StartEdit(context)"
+                                    <i @onclick="() => StartEdit(context)"
                                class="material-icons color-green">add_link</i>
                         </a>
                     </Tooltip>
@@ -139,7 +139,7 @@
         <AntDesign.Column Title=""
                           TData="string">
         </AntDesign.Column>
-    </RowTemplate>
+
 </Table>
 
 @code {
@@ -147,9 +147,6 @@
 
     private bool _isLoading = false;
     private string _defaultLp;
-
-    IDictionary<string, (bool edit, string)> _editCache =
-        new Dictionary<string, (bool edit, string)>();
 
     private List<InstrumentSourcesMapsMyNoSqlTableEntity> _sourcesMapsList;
     private IEnumerable<IProviderInstrumentMap> _mapsList;
@@ -237,7 +234,7 @@
         // check if provider exists
         if (!_mapsDict.ContainsKey(item.LiquidityProviderId))
         {
-            var entity = ProviderInstrumentMapMyNoSqlEntity.Create(new ProviderInstrumentMapMyNoSqlEntity
+            var entity = ProviderInstrumentEntity.Create(new ProviderInstrumentEntity
             {
                 LpId = item.LiquidityProviderId,
                 Map = new Dictionary<string, string>()

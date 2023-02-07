@@ -19,37 +19,35 @@
            PageSize="999999"
            HidePagination="@true"
            ScrollY="calc(100vh - 160px)">
-        <RowTemplate> 
-            <AntDesign.Column Title="Instrument"
-                    @bind-Field="@context.Name"
-                    TData="string"
-                    Width="140"
-                    Filters="instrumentFilters"
-                    Sortable/>
-            <AntDesign.Column Title="Quotes"  
-                    Field="@context.Id">
-                <TitleTemplate>
-                    <div class="grid-container-lp-quote-line">
-                        <div></div>
-                        <div></div>
-                        <div>Bid</div>
-                        <div></div>
-                        <div>Ask</div>
-                        <div></div>
-                        <div>Spread</div>
-                        <div></div>
-                        <div>DateTime</div>
-                    </div>
-                </TitleTemplate>
-                <ChildContent>
-                    <InstrumentAllQuotes
-                        Instrument="context"
-                        ProvidersList="@liquidityProvidersList"
-                        ActiveProviderId="@dictInstrumentProviderMaps[context.Id]"/>
-                </ChildContent>               
-            </AntDesign.Column>
-        </RowTemplate>
-    </Table>
+      <AntDesign.Column Title="Instrument"
+                @bind-Field="@context.Name"
+                TData="string"
+                Width="140"
+                Filters="instrumentFilters"
+                Sortable/>
+        <AntDesign.Column Title="Quotes"  
+                Field="@context.Id">
+            <TitleTemplate>
+                <div class="grid-container-lp-quote-line">
+                    <div></div>
+                    <div></div>
+                    <div>Bid</div>
+                    <div></div>
+                    <div>Ask</div>
+                    <div></div>
+                    <div>Spread</div>
+                    <div></div>
+                    <div>DateTime</div>
+                </div>
+            </TitleTemplate>
+            <ChildContent>
+                <InstrumentAllQuotes
+                    Instrument="context"
+                    ProvidersList="@liquidityProvidersList"
+                    ActiveProviderId="@dictInstrumentProviderMaps[context.Id]"/>
+            </ChildContent>               
+        </AntDesign.Column>
+  </Table>
 </div>
  
 @code {

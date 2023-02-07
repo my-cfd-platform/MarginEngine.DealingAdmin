@@ -57,6 +57,15 @@
     </Col>
 </AntDesign.Row>
 
+<PageHeader Title="Profile Instruments" Class="m-0 p-0">
+    <PageHeaderExtra>
+        <AntDesign.Button 
+            OnClick="ShowNewInstrumentDialog" 
+            Type="@AntDesign.ButtonType.Primary"
+            Class="btn-text">Add Instrument</AntDesign.Button>
+    </PageHeaderExtra>
+</PageHeader>
+
 <Table DataSource="@TradingProfile.Instruments"
        TItem="TradingProfileInstrumentModel"
        Bordered="@true"
@@ -64,18 +73,7 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 200px)"
        PageSize="999">
-    <TitleTemplate>
-        <PageHeader Title="Profile Instruments" Class="m-0 p-0">
-            <PageHeaderExtra>
-                 <AntDesign.Button 
-                    OnClick="ShowNewInstrumentDialog" 
-                    Type="@AntDesign.ButtonType.Primary"
-                    Class="btn-text">Add Instrument</AntDesign.Button>
-            </PageHeaderExtra>
-        </PageHeader>
-    </TitleTemplate>
-    <RowTemplate>           
-        <AntDesign.Column Title="Instrument Id"
+    <AntDesign.Column Title="Instrument Id"
                 TData="string"
                 DataIndex="Id"
                 Sortable/>
@@ -119,7 +117,6 @@
                 </Popconfirm>
             </Tooltip>
         </ActionColumn>
-    </RowTemplate>
 </Table>
 
 <Modal Title="@instrumentEditFormTitle"

@@ -1,0 +1,177 @@
+﻿@* Usings *@
+@using Flurl;
+@using Flurl.Http;
+@using DealingAdmin.Abstractions.Models.LpSettings
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.MyNoSqlRepositories.InstrumentSourcesMaps
+@using DealingAdmin.Abstractions
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using DealingAdmin.Abstractions.Providers.Models
+@using DealingAdmin.Shared.Models
+@using Newtonsoft.Json
+
+@* Injects *@
+@inject IRepository<IProviderRouterSource>  ProviderRouterSourceRepository
+@inject ILiquidityProviderReader LiquidityProviderReader
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
+
+@* Layout *@
+<PageHeader Class="mb-2 p-0" Title="Liquidity Provider Price Router Source" />
+<Table DataSource="@_providerSources"
+       TItem="ProviderRouterSourceViewModel"
+       Loading="@_isLoading"
+       Bordered="@true"
+       Total="0"
+       HidePagination="@true"
+       ScrollY="calc(100vh - 200px)"
+       PageSize="999">
+    
+        <AntDesign.Column Title="Liquidity Provider"
+                          TData="string"
+                          DataIndex="LiquidityProviderId"
+                          Width="100"
+                          Sortable
+                          Filterable>
+            <Tag Class="btn-text tag-color-orange">
+                @(context.LiquidityProviderId)
+            </Tag>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Remote Url"
+                          DataIndex="RemoteUrl"
+                          TData="string"
+                          Sortable
+                          Width="260">
+            @if (!context.BeingEdited)
+            {
+                @context.RemoteUrl
+            }
+            else
+            {
+                    <Input @bind-Value="context.RemoteUrl"/>
+            }
+        </AntDesign.Column>
+        <ActionColumn Title="Action" Width="80">
+            @if (!context.BeingEdited)
+            {
+                <Tooltip Title="@("Edit")">
+                    <a>
+                        <i @onclick="() => StartEdit(context)"
+                           class="material-icons color-green">edit</i>
+                    </a>
+                </Tooltip>
+            }
+            else
+            {
+                <Tooltip Title="@("Save")">
+                    <Popconfirm Title="@("OK to save?")"
+                                OnConfirm="() => SaveEdit(context)"
+                                OkText="Yes"
+                                CancelText="No">
+                        <a>
+                            <i class="material-icons color-green">check_circle_outline</i>
+                        </a>
+                    </Popconfirm>
+                </Tooltip>
+                <Tooltip Title="@("Cancel")">
+                    <Popconfirm Title="@("OK to cancel?")"
+                                OnConfirm="() => CancelEdit(context)"
+                                OkText="Yes"
+                                CancelText="No">
+                        <a>
+                            <i class="material-icons color-darkred">block</i>
+                        </a>
+                    </Popconfirm>
+                </Tooltip>
+            }
+        </ActionColumn>
+        <AntDesign.Column Title=""
+                          TData="string">
+        </AntDesign.Column>
+    
+</Table>
+<AntDesign.Button OnClick="LoadBinanceSymbols"
+                  Class="btn-text bg-color-aquamarine">
+    Test
+</AntDesign.Button>
+
+@code {
+    private List<ProviderRouterSourceViewModel> _providerSources;
+
+    private bool _isLoading = false;
+    private IDictionary<string, IProviderRouterSource> _providerSourcesMap;
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+        await base.OnInitializedAsync();
+    }
+
+    #region Code Functions
+
+    private async Task RefreshData()
+    {
+        _isLoading = true;
+        var liquidityProviders = await LiquidityProviderReader.GetLiquidityProviders();
+
+        _providerSourcesMap = (await ProviderRouterSourceRepository.GetAllAsync())
+            .ToDictionary(k=>k.LpId, v=>v);
+
+        _providerSources = new List<ProviderRouterSourceViewModel>();
+
+        foreach (var provider in liquidityProviders)  
+        {
+            if (!_providerSourcesMap.ContainsKey(provider))
+            {
+                _providerSourcesMap[provider] = ProviderRouterSourceEntity.Create(new ProviderRouterSourceEntity
+                {
+                    LpId = provider,
+                    RemoteUrl = "",
+                    InstrumentIds = new List<string>()
+                });
+            }
+            _providerSources.Add(ProviderRouterSourceViewModel.Create(_providerSourcesMap[provider]));
+        }
+
+        _isLoading = false;
+    }
+
+    #endregion
+
+    #region Storage Functions
+
+    private void SaveProvider(string providerId)
+    {
+        ProviderRouterSourceRepository.UpdateAsync(_providerSourcesMap[providerId]);
+    }
+
+    #endregion
+
+    #region Layout Functions
+
+    private void StartEdit(ProviderRouterSourceViewModel item)
+    {
+        item.PreEditRemoteUrl = item.RemoteUrl;
+        item.BeingEdited = true;
+    }
+
+    private void CancelEdit(ProviderRouterSourceViewModel item)
+    {
+        item.BeingEdited = false;
+        item.RemoteUrl = item.PreEditRemoteUrl; // recovery
+    }
+
+    private void SaveEdit(ProviderRouterSourceViewModel item)
+    {
+        _providerSourcesMap[item.LiquidityProviderId].RemoteUrl = item.RemoteUrl;
+        SaveProvider(item.LiquidityProviderId);
+
+        item.BeingEdited = false;
+    }
+
+    private async Task LoadBinanceSymbols()
+    {
+        var instruments = await ProviderInstrumentsInfo.Instruments("binance");
+    }
+
+    //private async Get
+    #endregion
+}

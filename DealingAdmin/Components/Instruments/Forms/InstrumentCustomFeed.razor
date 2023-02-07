@@ -1,0 +1,82 @@
+﻿@using DealingAdmin.Shared.Models
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using Microsoft.AspNetCore.Components
+@using DealingAdmin.Abstractions.Extensions
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
+
+<Modal Title="@Title"
+       Visible="@Visible"
+       Closable=@true
+       OkText="@("Ok")"
+       OnOk="OkAction"
+       OnCancel="CloseForm"
+       Footer="@ModalFooter.DefaultOkFooter"
+       Width="300">
+    <div class="m-1">Liquidity Provider:</div>
+    <Select DataSource="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+            TItemValue="string"
+            TItem="ViewListItem"
+            LabelName="Text"
+            ValueName="Value"
+            Style="width:220px"
+            DropdownMaxWidth="200" 
+            @bind-Value="_selectedLiquidityProviderId"/>
+    <div class="m-1">Liquidity Provider:</div>
+    <Input @bind-Value="_mapName"/>
+
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public IEnumerable<ViewListItem> LiquidityProvidersViewList { get; set; }
+    [Parameter]
+    public TradingInstrumentViewModel Instrument { get; set; } = new();
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public bool Copy { get; set; }
+
+    private IEnumerable<ProviderInstrumentInfo> _providerInstrumentInfoSource = new List<ProviderInstrumentInfo>();
+
+    private IEnumerable<ProviderInstrumentInfo> _selectedProviderInstrumentInfo;
+
+    private string _selectedLiquidityProviderId = "";
+    private string _mapName = "";
+
+    private void OkAction()
+    {
+        CloseForm();
+        AddFeed();
+    }
+
+    private void AddFeed()
+    {
+        //set LP id to the LP of the first assigned feed
+        if (_selectedLiquidityProviderId.IsNullOrEmpty() || _mapName.IsNullOrEmpty())
+            return;
+        if (!Instrument.LpSymbolDictionary.Any())
+        {
+            Instrument.LiquidityProviderId = _selectedLiquidityProviderId;
+            Instrument.DefaultLiquidityProvider = false;
+        }
+
+        Instrument.LpSymbolDictionary[_selectedLiquidityProviderId] = _mapName.ToUpperInvariant();
+        if (Instrument.LpSymbolDictionaryDelete.ContainsKey(_selectedLiquidityProviderId))
+        {
+            Instrument.LpSymbolDictionaryDelete.Remove(_selectedLiquidityProviderId);
+        }
+    }
+
+    private void CloseForm()
+    {
+        Visible = false;
+        VisibleChanged.InvokeAsync(false);
+    }
+}

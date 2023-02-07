@@ -1,5 +1,9 @@
 @using DealingAdmin.Abstractions
 @using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Shared.Models
+@using static DealingAdmin.Abstractions.Extensions.StringExtension
 @using Microsoft.AspNetCore.Components
 @using SimpleTrading.Abstraction.Trading.InstrumentsGroup
 @using SimpleTrading.Abstraction.Trading.Settings
@@ -7,10 +11,11 @@
 @using SimpleTrading.Abstractions.Common.InstrumentsAvatar
 @using SimpleTrading.Common.MyNoSql.InstrumentsAvatar
 
-@inject AdminAppSettings appSettings
-@inject ISnackbar snackbar
+@inject AdminAppSettings AppSettings
+@inject ISnackbar Snackbar
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
 
-<Form @ref="editForm"
+<Form @ref="_editForm"
         Model="Instrument" 
         ValidateOnChange="@false"
         ValidateMode="@FormValidateMode.Rules"
@@ -20,26 +25,35 @@
         <DataAnnotationsValidator></DataAnnotationsValidator>
     </Validator>
     <ChildContent>
-        <FormItem Label="Id" Required Rules=@RequiredRule>
-            <Input @bind-Value="@context.Id" Placeholder="Instrument Id" Disabled="@(!String.IsNullOrEmpty(context.Id))"/>
-        </FormItem>            
+        @if (context.Id.IsNullOrEmpty())
+        {
+            <FormItem>
+                <Button
+                    OnClick="ShowCopyFromProvider">
+                    Copy From Provider
+                </Button>
+            </FormItem>            
+        }
+        <FormItem Label="Id" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Id" Placeholder="Instrument Id" Disabled="@(context.Id.IsNotNullOrEmpty())"/>
+        </FormItem>
         <FormItem Label="Weight" Required>
-            <Input @bind-Value="@context.Weight" TValue="int?" Placeholder="Weight" />
+            <Input @bind-Value="@context.Weight" TValue="int?" Placeholder="Weight"/>
         </FormItem>
-        <FormItem Label="Name" Required Rules=@RequiredRule>
-            <Input @bind-Value="@context.Name" Placeholder="Name" />
+        <FormItem Label="Name" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Name" Placeholder="Name"/>
         </FormItem>
-        <FormItem Label="Base" Required Rules=@RequiredRule>
-            <Input @bind-Value="@context.Base" Placeholder="Base" />
+        <FormItem Label="Base" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Base" Placeholder="Base"/>
         </FormItem>
-        <FormItem Label="Quote" Required Rules=@RequiredRule>
-            <Input @bind-Value="@context.Quote" Placeholder="Quote" />
+        <FormItem Label="Quote" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Quote" Placeholder="Quote"/>
         </FormItem>
         <FormItem Label="Digits" Required>
-            <Input @bind-Value="@context.Digits" TValue="int" Placeholder="Digits" />
+            <Input @bind-Value="@context.Digits" TValue="int" Placeholder="Digits"/>
         </FormItem>
         <FormItem Label="TickSize" Required>
-            <Input @bind-Value="@context.TickSize" TValue="double" Placeholder="Tick Size" />
+            <Input @bind-Value="@context.TickSize" TValue="double" Placeholder="Tick Size"/>
         </FormItem>
         <FormItem Label="Swap Schedule">
             <Select @bind-Value="@Instrument.SwapScheduleId"
@@ -53,8 +67,8 @@
                 </SelectOptions>
             </Select>
         </FormItem>
-        <FormItem Label="Trading Group" Required Rules=@RequiredRule >
-             <Select @bind-Value="@Instrument.GroupId"
+        <FormItem Label="Trading Group" Required Rules=@_requiredRule>
+            <Select @bind-Value="@Instrument.GroupId"
                     TItemValue="string"
                     TItem="string">
                 <SelectOptions>
@@ -70,21 +84,29 @@
                 Days Off
             </Col>
             <Col Span="18">
-                 <DaysOffEditor @bind-Instrument="@Instrument"/>
-            </Col>   
+                <DaysOffEditor @bind-Instrument="@Instrument"/>
+            </Col>
         </AntDesign.Row>
         <FormItem Label="Day Timeout">
-            <Input @bind-Value="@context.DayTimeout" TValue="int?" Placeholder="Day Timeout" />
+            <Input @bind-Value="@context.DayTimeout" TValue="int?" Placeholder="Day Timeout"/>
         </FormItem>
         <FormItem Label="Night Timeout">
-            <Input @bind-Value="@context.NightTimeout" TValue="int?" Placeholder="Night Timeout" />
+            <Input @bind-Value="@context.NightTimeout" TValue="int?" Placeholder="Night Timeout"/>
         </FormItem>
-        <FormItem Label="API Key" Required  Rules=@CrudApiKeyRule>
-            <InputPassword @bind-Value="@context.TokenKey" />
+        <FormItem Label="API Key" Required Rules=@_crudApiKeyRule>
+            <InputPassword @bind-Value="@context.TokenKey"/>
         </FormItem>
     </ChildContent>
 </Form>
  
+<InstrumentProviderFeed 
+    Title="Instrument Copy"
+    @bind-Visible="@_isCopyDialogVisible"
+    LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+    Copy="true"
+    Instrument="Instrument"
+/>
+
 @code {
     [Parameter]
     public TradingInstrumentViewModel Instrument { get; set; } = new();
@@ -101,20 +123,49 @@
     [Parameter]
     public IEnumerable<IInstrumentSubGroup> SubGroups { get; set; }
 
-    AntDesign.Form<TradingInstrumentViewModel> editForm;
+    [Parameter]
+    public List<ViewListItem> LiquidityProvidersViewList { get; set; }
 
-    private FormValidationRule[] RequiredRule = { new FormValidationRule { Required = true } };
-    private FormValidationRule[] CrudApiKeyRule;
+    [Parameter]
+    public Dictionary<string, Dictionary<string, string>> FeedDict { get; set; }
+
+    private IEnumerable<ProviderInstrumentInfo> _providerInstrumentInfoSource = new List<ProviderInstrumentInfo>();
+
+    private Dictionary<string, IEnumerable<ProviderInstrumentInfo>> _providersDictionary = new();
+    private IEnumerable<ProviderInstrumentInfo> _selectedProviderInstrumentInfo;
+    private string _editedLiquidityProviderId;
+    
+    Form<TradingInstrumentViewModel> _editForm;
+
+    private bool _isCopyDialogVisible = false;
+    private FormValidationRule[] _requiredRule = { new() { Required = true } };
+    private FormValidationRule[] _crudApiKeyRule;
+
+    private async Task LpChange(string item)
+    {
+        if (_editedLiquidityProviderId != item)
+        {
+            await LpChanged(item).ConfigureAwait(false);
+        }
+        _editedLiquidityProviderId = item;
+    }
+
+    private async Task LpChanged(string item)
+    {
+        _providerInstrumentInfoSource = await ProviderInstrumentsInfo.InstrumentsInfo(item).ConfigureAwait(false);
+    }
 
     protected override void OnInitialized()
     {
-        CrudApiKeyRule = new FormValidationRule[]
+        _crudApiKeyRule = new []
         {
             new FormValidationRule
             {
                 Required = true,
                 Type = FormFieldType.String,
-                OneOf = new string[] { appSettings.AdminCrudApiKey },
+    // ReSharper disable once CoVariantArrayConversion
+    // ReSharper disable once RedundantExplicitArrayCreation
+                OneOf = new string[] { AppSettings.AdminCrudApiKey },
                 Message = "API Key is not valid"
             }
         };
@@ -124,7 +175,16 @@
 
     public bool ValidateEditForm()
     {
-        return editForm.Validate();
+        return _editForm.Validate();
     }
+
+    #region Layout Functions
+
+    private async Task ShowCopyFromProvider()
+    {
+        _isCopyDialogVisible = true;
+    }
+
+    #endregion
 }
 
