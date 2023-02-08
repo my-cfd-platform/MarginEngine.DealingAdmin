@@ -316,7 +316,7 @@
        OnOk="SaveInstrument"
        OnCancel="CloseEditInstrumentDialog"
        Width="900">
-    <TradingInstrumentEditForm @ref="_editForm"
+    <InstrumentAddEditForm @ref="_editForm"
                                Instrument="_editedInstrument"
                                InstrumentGroups="_instrumentGroups" 
                                SubGroups="_instrumentSubGroups"
@@ -402,7 +402,7 @@
     #endregion
 
     private bool _isLoading;
-    private TradingInstrumentEditForm _editForm;
+    private InstrumentAddEditForm _editForm;
 
     private string _instrumentEditFormTitle;
     private string _tradingDisableDialogTitle;
