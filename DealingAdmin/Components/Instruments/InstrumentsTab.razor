@@ -5,6 +5,7 @@
 @using DealingAdmin.Abstractions.Providers.Models
 @using DealingAdmin.Components.Instruments.Forms
 @using DealingAdmin.Shared.Models
+@using DealingAdmin.Shared.Services
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Abstraction.Trading.InstrumentsGroup
@@ -17,7 +18,7 @@
 @inject ITradingInstrumentsRepository InstrumentsRepository
 @inject InstrumentSourcesMapsMyNoSqlRepository SourcesMapsRepository
 @inject IRepository<IProviderInstrumentMap> InstrumentMappingRepository
-@inject ILiquidityProviderReader LiquidityProviderReader
+@inject IAvailableLiquidityProviders AvailableLiquidityProviders
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
 @inject ISwapProfileWriter SwapProfileWriter
 @inject AdminAppSettings AppSettings
@@ -461,7 +462,7 @@
     private async Task RefreshLiquidityProviders()
     {
         _defaultLp = await DefLiquidityProviderWriter.GetAsync();
-        var liquidityProviders = await LiquidityProviderReader.GetLiquidityProviders();
+        var liquidityProviders = AvailableLiquidityProviders.GetLiquidityProviders();
         _liquidityProvidersViewList = new();
         _liquidityProvidersViewList.Add(new ViewListItem { Text = $"Default ({_defaultLp})", Value = string.Empty });
         liquidityProviders.ForEach(item =>

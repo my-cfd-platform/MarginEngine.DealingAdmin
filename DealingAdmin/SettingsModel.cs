@@ -5,6 +5,8 @@ namespace DealingAdmin
     [YamlAttributesOnly]
     public class SettingsModel
     {
+        [YamlProperty("DealingAdmin.AvailableLiquidityProviders")]
+        public string AvailableLiquidityProviders { get; set; }
         [YamlProperty("DealingAdmin.DictionariesMyNoSqlServerWriter")]
         public string DictionariesMyNoSqlServerWriter { get; set; }
 

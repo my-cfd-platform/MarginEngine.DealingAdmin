@@ -167,10 +167,18 @@ namespace DealingAdmin
 
             #endregion
 
-            #endregion
+            #region Liquidity Providers
 
             services.AddSingleton<ILiquidityProviderReader>(
                 new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
+            services.AddSingleton<IAvailableLiquidityProviders>(
+                new AvailableLiquidityProviders(settingsModel.AvailableLiquidityProviders));
+
+            #endregion
+
+            #endregion
+
+
             services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton((IDefaultValuesRepository)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(

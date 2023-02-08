@@ -8,11 +8,12 @@
 @using DealingAdmin.Abstractions.Models.ProviderInstruments
 @using DealingAdmin.Abstractions.Providers.Models
 @using DealingAdmin.Shared.Models
+@using DealingAdmin.Shared.Services
 @using Newtonsoft.Json
 
 @* Injects *@
 @inject IRepository<IProviderRouterSource>  ProviderRouterSourceRepository
-@inject ILiquidityProviderReader LiquidityProviderReader
+@inject IAvailableLiquidityProviders AvailableLiquidityProviders
 @inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
 
 @* Layout *@
@@ -110,8 +111,7 @@
     private async Task RefreshData()
     {
         _isLoading = true;
-        var liquidityProviders = await LiquidityProviderReader.GetLiquidityProviders();
-
+        var liquidityProviders = AvailableLiquidityProviders.GetLiquidityProviders();
         _providerSourcesMap = (await ProviderRouterSourceRepository.GetAllAsync())
             .ToDictionary(k=>k.LpId, v=>v);
 
