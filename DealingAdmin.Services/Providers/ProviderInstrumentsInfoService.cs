@@ -13,6 +13,11 @@ public class ProviderInstrumentsInfoService: IProviderInstrumentsInfoService
     private const string BinanceApi = "https://api.binance.com/api/v3/exchangeInfo";
     private const string BinanceCoinInfo = "https://www.binance.com/en/markets/coinInfo";
 
+    private List<string> _availableProviders = new()
+    {
+        "binance"
+    }; 
+
     public async Task<IEnumerable<ProviderInstrumentInfo>> InstrumentsInfo(string providerId)
     {
         switch (providerId.ToLowerInvariant())
@@ -107,4 +112,8 @@ public class ProviderInstrumentsInfoService: IProviderInstrumentsInfoService
         return nameDictionary;
     }
 
+    public IEnumerable<string> GetAvailableInfoProviders()
+    {
+        return _availableProviders;
+    }
 }

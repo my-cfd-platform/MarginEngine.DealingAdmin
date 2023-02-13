@@ -19,11 +19,13 @@
     OnClick="ShowCustomFromProvider">
     Add
 </Button>
-<Button
-    OnClick="ShowCopyFromProvider">
-    Add From Provider
-</Button>
-
+@if (_liquidityInfoProvidersViewList.Any())
+{
+    <Button
+        OnClick="ShowCopyFromProvider">
+        Add From Provider
+    </Button>
+}
 <Form @ref="_editForm"
       Model="Instrument" 
       ValidateOnChange="@false"
@@ -52,7 +54,7 @@
 <InstrumentProviderFeed 
     Title="Instrument Feed"
     @bind-Visible="@_isCopyDialogVisible"
-    LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+    LiquidityProvidersViewList="@_liquidityInfoProvidersViewList"
     Copy="false"
     Instrument="Instrument"
 />
@@ -69,15 +71,23 @@
 
     [Parameter]
     public EventCallback<TradingInstrumentViewModel> InstrumentChanged { get; set; }
-    
+
     [Parameter]
     public List<ViewListItem> LiquidityProvidersViewList { get; set; }
 
+    private IEnumerable<ViewListItem> _liquidityInfoProvidersViewList;
 
     Form<TradingInstrumentViewModel> _editForm;
 
     private bool _isCopyDialogVisible;
     private bool _isCustomDialogVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var availableInfoProviders = ProviderInstrumentsInfo.GetAvailableInfoProviders();
+        _liquidityInfoProvidersViewList = LiquidityProvidersViewList
+            .Where(lp => availableInfoProviders.Contains(lp.Value.ToLowerInvariant()));
+    }
 
     #region Layout Functions
 

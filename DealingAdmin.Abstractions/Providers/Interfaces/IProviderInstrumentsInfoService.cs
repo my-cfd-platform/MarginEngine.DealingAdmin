@@ -7,5 +7,6 @@ namespace DealingAdmin.Abstractions.Providers.Interfaces;
 public interface IProviderInstrumentsInfoService
 {
     Task<Dictionary<string, string>> Instruments(string providerId);
+    IEnumerable<string> GetAvailableInfoProviders();
     Task<IEnumerable<ProviderInstrumentInfo>> InstrumentsInfo(string providerId);
 }

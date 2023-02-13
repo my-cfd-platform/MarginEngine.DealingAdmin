@@ -22,7 +22,7 @@
         <DataAnnotationsValidator></DataAnnotationsValidator>
     </Validator>
     <ChildContent>
-        @if (context.Id.IsNullOrEmpty())
+        @if (context.Id.IsNullOrEmpty() && _liquidityInfoProvidersViewList.Any())
         {
             <FormItem>
                 <Button
@@ -99,10 +99,12 @@
 <InstrumentProviderFeed 
     Title="Instrument Copy"
     @bind-Visible="@_isCopyDialogVisible"
-    LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+    LiquidityProvidersViewList="@_liquidityInfoProvidersViewList"
+    
     Copy="true"
     Instrument="Instrument"
 />
+@*LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty() && _availableInfoProviders.Contains(i.Value))"*@
 
 @code {
     [Parameter]
@@ -131,13 +133,14 @@
     private Dictionary<string, IEnumerable<ProviderInstrumentInfo>> _providersDictionary = new();
     private IEnumerable<ProviderInstrumentInfo> _selectedProviderInstrumentInfo;
     private string _editedLiquidityProviderId;
-    
+    private IEnumerable<ViewListItem> _liquidityInfoProvidersViewList;
+
     Form<TradingInstrumentViewModel> _editForm;
 
     private bool _isCopyDialogVisible = false;
     private FormValidationRule[] _requiredRule = { new() { Required = true } };
     private FormValidationRule[] _crudApiKeyRule;
-
+    /*
     private async Task LpChange(string item)
     {
         if (_editedLiquidityProviderId != item)
@@ -151,9 +154,12 @@
     {
         _providerInstrumentInfoSource = await ProviderInstrumentsInfo.InstrumentsInfo(item).ConfigureAwait(false);
     }
-
+    */
     protected override void OnInitialized()
     {
+        var availableInfoProviders = ProviderInstrumentsInfo.GetAvailableInfoProviders();
+        _liquidityInfoProvidersViewList = LiquidityProvidersViewList
+            .Where(lp => availableInfoProviders.Contains(lp.Value.ToLowerInvariant()));
         _crudApiKeyRule = new []
         {
             new FormValidationRule

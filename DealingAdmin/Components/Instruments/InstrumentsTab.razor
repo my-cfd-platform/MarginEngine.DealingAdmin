@@ -20,6 +20,7 @@
 @inject IRepository<IProviderInstrumentMap> InstrumentMappingRepository
 @inject IAvailableLiquidityProviders AvailableLiquidityProviders
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
 @inject ISwapProfileWriter SwapProfileWriter
 @inject AdminAppSettings AppSettings
 @inject ISnackbar Snackbar 
@@ -39,46 +40,47 @@
        @bind-SelectedRows="@_selectedTradingInstruments"
        Loading="@_isLoading"
        Bordered="@true"
-       Total="0"
+       Total="_tradingInstruments.Count"
        HidePagination="@true"
        ScrollX="100vh"
        ScrollY="calc(100vh - 200px)"
        PageSize="999">
-    <ColumnDefinitions>
-        <ColumnDefinition Title="Id"
-                          Width="160"
-                          Fixed="left"/>
-        <ColumnDefinition Title="Group"
-                          Width="160"/>
-        <ColumnDefinition Title="Weight"
-                          Width="72"/>
-        <ColumnDefinition Title="Sub group"
-                          Width="140"/>
-        <ColumnDefinition Title="Base"
-                          Width="72"/>
-        <ColumnDefinition Title="Quote"
-                          Width="72"/>
-        <ColumnDefinition Title="Digits"
-                          Width="68"/>
-        <ColumnDefinition Title="Swap"
-                          Width="72"/>
-        <ColumnDefinition Title="Liquidity Provider"
-                          Width="140"/>
-        <ColumnDefinition Title="Instrument Feeds"
-                          Width="140"/>
-        <ColumnDefinition Title="Days offs"
-                          Width="80"/>
-        <ColumnDefinition Title="Timeout"
-                          Width="120"/>
-        <ColumnDefinition Title="On/Off"
-                          Width="72"
-                          Fixed="right"/>
-        <ColumnDefinition Title="Edit"
-                          Width="60"
-                          Fixed="right"/>
-    </ColumnDefinitions>
+    @**@
+<ColumnDefinitions>
+    <ColumnDefinition Title="Id"
+                      Width="160"
+                      Fixed="left"/>
+    <ColumnDefinition Title="Group"
+                      Width="160"/>
+    <ColumnDefinition Title="Weight"
+                      Width="72"/>
+    <ColumnDefinition Title="Sub group"
+                      Width="140"/>
+    <ColumnDefinition Title="Base"
+                      Width="72"/>
+    <ColumnDefinition Title="Quote"
+                      Width="72"/>
+    <ColumnDefinition Title="Digits"
+                      Width="68"/>
+    <ColumnDefinition Title="Swap"
+                      Width="72"/>
+    <ColumnDefinition Title="Liquidity Provider"
+                      Width="140"/>
+    <ColumnDefinition Title="Instrument Feeds"
+                      Width="140"/>
+    <ColumnDefinition Title="Days offs"
+                      Width="80"/>
+    <ColumnDefinition Title="Timeout"
+                      Width="120"/>
+    <ColumnDefinition Title="On/Off"
+                      Width="72"
+                      Fixed="right"/>
+    <ColumnDefinition Title="Edit"
+                      Width="60"
+                      Fixed="right"/>
+</ColumnDefinitions>
 
-    @*<Selection Hidden="true" Key="@context.Data.Id"/>
+@*<Selection Hidden="true" Key="@context.Data.Id"/>
             <AntDesign.Column Title="Id"
                               TData="string"
                               DataIndex="Id"
@@ -178,137 +180,137 @@
                 </a>
             </ActionColumn>*@
 
-    <RowTemplate>
-        <TableRow>
-            @*Id*@
-            <TableCell>
-                <p>
-                    <Tooltip Title="@("Instrument ID")">
-                        <b>@context.Data.Id</b>
-                    </Tooltip>
-                    <br/>
-                    <Tooltip Title="@("Instrument Name")">
-                        <b>@context.Data.Name</b>
-                    </Tooltip>
-                </p>
-            </TableCell>
-            @*Group*@
-            <TableCell>
-                @context.Data.GroupId
-            </TableCell>
-            @*Weight*@
-            <TableCell Align="ColumnAlign.Center">
-                @context.Data.Weight
-            </TableCell>
-            @*SubGroup*@
-            <TableCell>
-                @context.Data.SubGroupId
-            </TableCell>
-            @*Base*@
-            <TableCell>
-                @context.Data.Base
-            </TableCell>
-            @*Quote*@
-            <TableCell>
-                @context.Data.Quote
-            </TableCell>
-            @*Quote*@
-            <TableCell Align="ColumnAlign.Center">
-                @context.Data.Digits
-            </TableCell>
-            @*Swap Schedule*@
-            <TableCell Align="ColumnAlign.Center">
-                @if (context.Data.SwapScheduleId.IsNullOrEmpty())
-                {
-                            <i class="material-icons color-crimson font-18">warning_amber</i>
-                }
-                else
-                {
-                            <Tag PresetColor="PresetColor.Magenta">
-                        @context.Data.SwapScheduleId
-                            </Tag>
-                }
-            </TableCell>
-            @*Liquidity Provider*@
-            <TableCell Align="ColumnAlign.Center">
-                <a @onclick="() => ShowEditLiquidityProviderDialog(context.Data)">
-                    <Tag Class="@GetLiquidityProviderTagClass(@context.Data.DefaultLiquidityProvider)">
-                        @(context.Data.LiquidityProviderId.IsNullOrEmpty() ? _defaultLp : context.Data.LiquidityProviderId)
-                    </Tag>
-                </a>
-            </TableCell>
-            @*Instrument Feeds*@
-            <TableCell Align="ColumnAlign.Center">
-                <a @onclick="() => ShowEditInstrumentFeedsDialog(context.Data)">
-                    @{
-                        var item = context.Data;
+<RowTemplate>
+    <TableRow>
+        @*Id*@
+        <TableCell>
+            <p>
+                <Tooltip Title="@("Instrument ID")">
+                    <b>@context.Data.Id</b>
+                </Tooltip>
+                <br/>
+                <Tooltip Title="@("Instrument Name")">
+                    <b>@context.Data.Name</b>
+                </Tooltip>
+            </p>
+        </TableCell>
+        @*Group*@
+        <TableCell>
+            @context.Data.GroupId
+        </TableCell>
+        @*Weight*@
+        <TableCell Align="ColumnAlign.Center">
+            @context.Data.Weight
+        </TableCell>
+        @*SubGroup*@
+        <TableCell>
+            @context.Data.SubGroupId
+        </TableCell>
+        @*Base*@
+        <TableCell>
+            @context.Data.Base
+        </TableCell>
+        @*Quote*@
+        <TableCell>
+            @context.Data.Quote
+        </TableCell>
+        @*Quote*@
+        <TableCell Align="ColumnAlign.Center">
+            @context.Data.Digits
+        </TableCell>
+        @*Swap Schedule*@
+        <TableCell Align="ColumnAlign.Center">
+            @if (context.Data.SwapScheduleId.IsNullOrEmpty())
+            {
+                <i class="material-icons color-crimson font-18">warning_amber</i>
+            }
+            else
+            {
+                <Tag PresetColor="PresetColor.Magenta">
+                    @context.Data.SwapScheduleId
+                </Tag>
+            }
+        </TableCell>
+        @*Liquidity Provider*@
+        <TableCell Align="ColumnAlign.Center">
+            <a @onclick="() => ShowEditLiquidityProviderDialog(context.Data)">
+                <Tag Class="@GetLiquidityProviderTagClass(@context.Data.DefaultLiquidityProvider)">
+                    @(context.Data.LiquidityProviderId.IsNullOrEmpty() ? _defaultLp : context.Data.LiquidityProviderId)
+                </Tag>
+            </a>
+        </TableCell>
+        @*Instrument Feeds*@
+        <TableCell Align="ColumnAlign.Center">
+            <a @onclick="() => ShowEditInstrumentFeedsDialog(context.Data)">
+                @{
+                    var item = context.Data;
 
-                        if (item.LpSymbolDictionary.Any())
-                        {
-                            foreach (var (lpId, feedId) in item.LpSymbolDictionary)
-                            {
-                                            <Tag PresetColor="PresetColor.Lime">
-                                    @lpId @(" : ") @feedId
-                                            </Tag>
-                            }
-                        }
-                        else
-                        {
-                                    <Tag PresetColor="PresetColor.Red">
-                                        None
-                                    </Tag>
-                        }
-                    }
-                </a>
-            </TableCell>
-            @*Days Offs*@
-            <TableCell Align="ColumnAlign.Center">
-                <a @onclick="() => ShowEditDaysOffsDialog(context.Data)">
-                    @if (context!.Data!.DaysOff?.Count() == 0)
+                    if (item.LpSymbolDictionary.Any())
                     {
-                            <Tag PresetColor="PresetColor.Orange">
-                                None
+                        foreach (var (lpId, feedId) in item.LpSymbolDictionary)
+                        {
+                            <Tag PresetColor="PresetColor.Lime">
+                                @lpId @(" : ") @feedId
                             </Tag>
+                        }
                     }
                     else
                     {
-                        var tooltip = context!.Data!.DaysOff.Select(FormatUtils.GetDayOffText);
-                                <Tooltip Title=@(tooltip.Join(" "))>
-                                <Tag PresetColor="PresetColor.Green">
-                                    Enabled
-                                </Tag>
-                            </Tooltip>
+                        <Tag PresetColor="PresetColor.Red">
+                            None
+                        </Tag>
                     }
-                </a>
-            </TableCell>
-            @*Timeout*@
-            <TableCell>
-                Night:<Tag PresetColor="PresetColor.Purple">@context.Data.NightTimeout</Tag>
-                <br/>
-                Day:<Tag PresetColor="PresetColor.GeekBlue">@context.Data.DayTimeout</Tag>
-            </TableCell>
-            @*On/Off*@
-            <TableCell Align="ColumnAlign.Center">
-                <AntDesign.Button
-                    Class="@GetTradingDisableColor(context.Data.TradingDisabled)"
-                    OnClick="() => ShowTradingDisableDialog(context.Data)"
-                    Shape="@ButtonShape.Circle"
-                    Icon="@IconType.Outline.Poweroff"/>
-            </TableCell>
-            @*Edit*@
-            <TableCell>
-                <a>
-                    <i @onclick="() => ShowEditInstrumentDialog(context.Data)"
-                       class="material-icons color-primary">
-                        edit
-                    </i>
-                </a>
-            </TableCell>
-        </TableRow>
-    </RowTemplate>
+                }
+            </a>
+        </TableCell>
+        @*Days Offs*@
+        <TableCell Align="ColumnAlign.Center">
+            <a @onclick="() => ShowEditDaysOffsDialog(context.Data)">
+                @if (context!.Data!.DaysOff?.Count() == 0)
+                {
+                    <Tag PresetColor="PresetColor.Orange">
+                        None
+                    </Tag>
+                }
+                else
+                {
+                    var tooltip = context!.Data!.DaysOff.Select(FormatUtils.GetDayOffText);
+                    <Tooltip Title=@(tooltip.Join(" "))>
+                        <Tag PresetColor="PresetColor.Green">
+                            Enabled
+                        </Tag>
+                    </Tooltip>
+                }
+            </a>
+        </TableCell>
+        @*Timeout*@
+        <TableCell>
+            Night:<Tag PresetColor="PresetColor.Purple">@context.Data.NightTimeout</Tag>
+            <br/>
+            Day:<Tag PresetColor="PresetColor.GeekBlue">@context.Data.DayTimeout</Tag>
+        </TableCell>
+        @*On/Off*@
+        <TableCell Align="ColumnAlign.Center">
+            <AntDesign.Button
+                Class="@GetTradingDisableColor(context.Data.TradingDisabled)"
+                OnClick="() => ShowTradingDisableDialog(context.Data)"
+                Shape="@ButtonShape.Circle"
+                Icon="@IconType.Outline.Poweroff"/>
+        </TableCell>
+        @*Edit*@
+        <TableCell>
+            <a>
+                <i @onclick="() => ShowEditInstrumentDialog(context.Data)"
+                   class="material-icons color-primary">
+                    edit
+                </i>
+            </a>
+        </TableCell>
+    </TableRow>
+</RowTemplate>
 </Table>
 
-@*Edit Instrument*@
+@*Add/Edit Instrument*@
 <Modal Title="@_instrumentEditFormTitle"
        Visible="@_isEditInstrumentDialogVisible"
        Closable="@false"
@@ -758,12 +760,12 @@
                 Snackbar.Add($"Edit Form for '{_editedInstrument.Id}' is not valid", Severity.Warning);
                 return;
             }
-
-            await InstrumentsRepository.UpdateAsync(_editedInstrument);
-            _isEditInstrumentDialogVisible = false;
+            
+            await InstrumentsRepository.UpdateAsync(_editedInstrument).ConfigureAwait(false);
+            //_isEditInstrumentDialogVisible = false;
             Snackbar.Add($"Instrument '{_editedInstrument.Id}' saved", Severity.Success);
-            await RefreshData();
             CloseEditInstrumentDialog();
+            await RefreshData();
         }
         catch (Exception ex)
         {
