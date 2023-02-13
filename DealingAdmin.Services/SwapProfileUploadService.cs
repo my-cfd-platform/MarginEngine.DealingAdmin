@@ -5,19 +5,21 @@ using CsvHelper.Configuration;
 using CsvHelper.Excel;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
+using DealingAdmin.Abstractions.Providers.Interfaces;
 using Microsoft.AspNetCore.Components.Forms;
 using Serilog.Core;
+using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.Settings;
 
 namespace DealingAdmin.Services
 {
     public class SwapProfileUploadService : ISwapProfileUploadService
     {
-        private readonly IInstrumentsCache _instrumentsCache;
+        private readonly ICache<ITradingInstrument> _instrumentsCache;
 
         private readonly Logger _logger;
 
-        public SwapProfileUploadService(IInstrumentsCache instrumentsCache, Logger logger)
+        public SwapProfileUploadService(ICache<ITradingInstrument> instrumentsCache, Logger logger)
         {
             _instrumentsCache = instrumentsCache;
             _logger = logger;

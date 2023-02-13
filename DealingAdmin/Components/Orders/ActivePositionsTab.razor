@@ -3,17 +3,19 @@
 @using AntDesign
 @using DealingAdmin.Abstractions
 @using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
 @using DealingAdmin.Services
 @using DealingAdmin.Shared.Services
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Caches.ActiveOrders
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Abstraction.Trading.Settings
 @using SimpleTrading.Engine.Grpc.Contracts
 
 @inject StateManager AppState
 @inject LiveDemoServiceMapper LiveDemoServices
 @inject IAccountTypeFilter AccTypeFilter
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject AdminAppSettings appSettings
 @inject ISnackbar snackbar
 @inject Logger logger

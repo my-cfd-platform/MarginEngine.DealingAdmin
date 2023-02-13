@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
+using DealingAdmin.Abstractions.Providers.Interfaces;
+using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.Settings;
 using SimpleTrading.MyNoSqlRepositories.InstrumentSourcesMaps;
 using SimpleTrading.QuotesFeedRouter.Abstractions;
@@ -11,10 +13,10 @@ namespace DealingAdmin.Services
     {
         private readonly InstrumentSourcesMapsMyNoSqlRepository _instrumentSourcesMapsRepository;
 
-        private readonly IInstrumentsCache _instrumentsCache;
+        private readonly ICache<ITradingInstrument> _instrumentsCache;
 
         public QuoteSourceService(
-             IInstrumentsCache instrumentsCache,
+            ICache<ITradingInstrument> instrumentsCache,
              InstrumentSourcesMapsMyNoSqlRepository instrumentSourcesMapsRepository)
         {
             _instrumentsCache = instrumentsCache;

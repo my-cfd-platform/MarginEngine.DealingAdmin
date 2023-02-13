@@ -1,6 +1,7 @@
 ﻿@using AntDesign
 @using DealingAdmin.Abstractions
 @using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
 @using DealingAdmin.Shared.Services
 @using SimpleTrading.Abstraction.BidAsk
 @using SimpleTrading.Abstraction.Trading.Instruments
@@ -8,7 +9,7 @@
 @using SimpleTrading.Abstraction.Trading.Settings
 @using SimpleTrading.Common.MyNoSql.DefaultValues
 
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ILiquidityProviderReader LpReader
 @inject IQuoteSourceService QuoteSourceService
 @inject IDefaultLiquidityProviderWriter DefaultLpWriter

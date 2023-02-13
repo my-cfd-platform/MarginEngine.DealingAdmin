@@ -6,9 +6,11 @@
 @using SimpleTrading.Abstraction.Trading.Settings
 @using System.IO
 @using System.Diagnostics
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk
 
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject IUserMessageService MessageService
 @inject BidAskMyServiceBusPublisher bidAskPublisher
 @inject ISnackbar snackbar

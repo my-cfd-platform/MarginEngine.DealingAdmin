@@ -4,11 +4,13 @@
 @using DealingAdmin.Abstractions.Providers.Interfaces
 @using DealingAdmin.Abstractions.Providers.Models
 @using DealingAdmin.Components.Instruments.Forms
+@using DealingAdmin.Services.Providers
 @using DealingAdmin.Shared.Models
 @using DealingAdmin.Shared.Services
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Abstraction.Trading.InstrumentsGroup
+@using SimpleTrading.Abstraction.Trading.Settings
 @using SimpleTrading.Abstraction.Trading.Swaps
 @using SimpleTrading.MyNoSqlRepositories.InstrumentSourcesMaps
 @using SimpleTrading.QuotesFeedRouter.Abstractions
@@ -16,8 +18,11 @@
 @inject IInstrumentSubGroupsRepository SubGroupsRepository
 @inject IInstrumentGroupsRepository GroupsRepository
 @inject ITradingInstrumentsRepository InstrumentsRepository
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject InstrumentSourcesMapsMyNoSqlRepository SourcesMapsRepository
+@inject ICache<IQuoteFeedSource> SourcesMapsCache;
 @inject IRepository<IProviderInstrumentMap> InstrumentMappingRepository
+@inject ICache<IProviderInstrumentMap> InstrumentMappingCache
 @inject IAvailableLiquidityProviders AvailableLiquidityProviders
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
 @inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
@@ -40,12 +45,15 @@
        @bind-SelectedRows="@_selectedTradingInstruments"
        Loading="@_isLoading"
        Bordered="@true"
-       Total="_tradingInstruments.Count"
-       HidePagination="@true"
+       Total="@(_tradingInstruments != null ? _tradingInstruments.Count : 0)"
+       ScrollX="100vh"
+       ScrollY="calc(100vh - 240px)"
+       PageSize="50"
+       >
+    @*HidePagination="@true"
        ScrollX="100vh"
        ScrollY="calc(100vh - 200px)"
-       PageSize="999">
-    @**@
+       PageSize="999"*@
 <ColumnDefinitions>
     <ColumnDefinition Title="Id"
                       Width="160"
@@ -415,7 +423,7 @@
     private bool _isTradingDisabled;
     private string _disableTradingApiKey;
     private string _defaultLp;
-    private List<InstrumentSourcesMapsMyNoSqlTableEntity> _sourcesMapsList;
+    private IEnumerable<IQuoteFeedSource> _sourcesMapsList;
     private string _instrumentEditTitle;
     private string _editedLiquidityProviderId;
 
@@ -435,16 +443,21 @@
     private async Task RefreshData()
     {
         _isLoading = true;
+        var start = DateTime.UtcNow;
         await RefreshMapping();
+        var a = (DateTime.UtcNow - start).Milliseconds;
         await RefreshLiquidityProviders();
-        await RefreshSourcesMaps();
+        var b = (DateTime.UtcNow - start).Milliseconds - a;
+        RefreshSourcesMaps();
+        var c = (DateTime.UtcNow - start).Milliseconds - a - b;
         await RefreshInstruments();
+        var d = (DateTime.UtcNow - start).Milliseconds - a - b - c;
         _isLoading = false;
     }
 
     private async Task RefreshMapping()
     {
-        _mapsList = await InstrumentMappingRepository.GetAllAsync();
+        _mapsList = InstrumentMappingCache.GetAll();
         _mapsDict = new();
         _feedDict = new();
         foreach (var mapEntity in _mapsList)
@@ -471,16 +484,15 @@
             _liquidityProvidersViewList.Add(new ViewListItem { Text = item, Value = item }));
     }
 
-    private async Task RefreshSourcesMaps()
+    private void RefreshSourcesMaps()
     {
-        _sourcesMapsList = (await SourcesMapsRepository.GetAllAsync()).ToList();
+        _sourcesMapsList = SourcesMapsCache.GetAll();//(await SourcesMapsRepository.GetAllAsync()).ToList();
     }
 
     private async Task RefreshInstruments()
     {
-        var instruments = await InstrumentsRepository.GetAllAsync();
         _tradingInstruments = new List<TradingInstrumentViewModel>();
-
+        var instruments = InstrumentsCache.GetAll();
         foreach (var inst in instruments)
         {
             var provider = GetLiquidityProviderIdForInstrument(inst.Id);

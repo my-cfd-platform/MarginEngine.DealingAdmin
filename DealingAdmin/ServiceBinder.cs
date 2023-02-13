@@ -137,20 +137,8 @@ namespace DealingAdmin
 
             // ST Services (to be replaced in the future)
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
-            services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
 
             #region Data Providers
-            
-            #region Instrument Mapping
-
-            // Cache
-            // services.AddSingleton<IInstrumentMappingCache>(new InstrumentMappingCache(tcpConnection));
-            
-            // Repository
-            services.AddSingleton<IRepository<IProviderInstrumentMap>>(
-                new InstrumentMappingRepository(settingsModel.DictionariesMyNoSqlServerWriter));
-
-            #endregion
 
             #region Price Router Lp Source
 
@@ -169,18 +157,60 @@ namespace DealingAdmin
 
             #region Liquidity Providers
 
+            // Repository
             services.AddSingleton<ILiquidityProviderReader>(
                 new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
+            // Repository
             services.AddSingleton<IAvailableLiquidityProviders>(
                 new AvailableLiquidityProviders(settingsModel.AvailableLiquidityProviders));
 
             #endregion
 
+            #region Trading Instruments and dependencies
+
+            #region Instruments
+
+            // Cache
+            services.AddSingleton<ICache<ITradingInstrument>>(new InstrumentCache(tcpConnection));
+            // Repository
+            services.AddSingleton<ITradingInstrumentsRepository>(MyNoSqlServerFactory.CreateTradingInstrumentsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            #endregion
+
+            #region Other
+            services.AddSingleton<IInstrumentGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentGroupsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            services.AddSingleton<IInstrumentSubGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentSubGroupsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            services.AddSingleton(CommonMyNoSqlServerFactory.CreateTradingInstrumentMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            
+
+            #endregion
+
+            #region Instrument Source Map
+
+            services.AddSingleton<ICache<IQuoteFeedSource>>(new InstrumentSourcesMapsCache(tcpConnection));
+            services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
+            #region Instrument Mapping
+
+            // Cache
+            services.AddSingleton<ICache<IProviderInstrumentMap>>(new InstrumentMappingCache(tcpConnection));
+            // Repository
+            services.AddSingleton<IRepository<IProviderInstrumentMap>>(
+                new InstrumentMappingRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
+            #endregion
+
             #endregion
 
 
-            services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton((IDefaultValuesRepository)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton((IDefaultLiquidityProviderWriter)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(
@@ -200,14 +230,6 @@ namespace DealingAdmin
             liveDemoServicesMapper.InitService(false,
                services => services.ActiveOrdersReader = MyNoSqlServerFactory.CreateActiveOrdersCacheReader(tcpConnection, false));
 
-            services.AddSingleton<ITradingInstrumentsRepository>(MyNoSqlServerFactory.CreateTradingInstrumentsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton<IInstrumentGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentGroupsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton<IInstrumentSubGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentSubGroupsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton(CommonMyNoSqlServerFactory.CreateTradingInstrumentMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
 
             BindLiveDemoMyNoSql(liveDemoServicesMapper, settingsModel, true);
             BindLiveDemoMyNoSql(liveDemoServicesMapper, settingsModel, false);

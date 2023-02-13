@@ -6,11 +6,13 @@
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Trading.Settings
 @using System.ComponentModel.DataAnnotations
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.TickHistory.Grpc
 @using SimpleTrading.TickHistory.Grpc.Contracts
 
 @inject ITickHistoryServiceGrpc tickHistoryGrpc
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ISnackbar snackbar
 @inject Logger logger
 

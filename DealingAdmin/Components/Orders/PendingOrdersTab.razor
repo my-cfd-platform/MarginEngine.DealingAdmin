@@ -3,14 +3,16 @@
 @using AntDesign
 @using DealingAdmin.Abstractions
 @using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
 @using DealingAdmin.Services
 @using DealingAdmin.Shared.Services
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Abstraction.Trading.Settings
 
 @inject StateManager AppState
 @inject LiveDemoServiceMapper LiveDemoServices
 @inject IAccountTypeFilter AccTypeFilter
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ISnackbar snackbar
 
 <div id="PendingOrdersRegion">    

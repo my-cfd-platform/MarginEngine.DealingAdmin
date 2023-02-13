@@ -6,6 +6,8 @@
 @using DealingAdmin.Services
 @using DealingAdmin.Shared.Services
 @using System.Collections.Generic
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.Abstraction.Trading.Settings
 @using SimpleTrading.PersonalData.Grpc
 
@@ -14,7 +16,7 @@
 @inject LiveDemoServiceMapper LiveDemoServices
 @inject IAccountTypeFilter AccTypeFilter
 @inject ICrmDataReader CrmDataReader
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ISnackbar snackbar
 
 <div id="ClosedPositionsRegion">
