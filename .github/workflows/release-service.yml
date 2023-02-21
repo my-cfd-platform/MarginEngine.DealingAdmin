@@ -45,6 +45,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           path: ./publish-api
-          repository: mycfdplatform/exchange-admin
+          repository: mycfdplatform/dealing-admin
           tags: ${{ steps.vars.outputs.tag }}
           build_args: ui_version=${{ steps.vars.outputs.tag }},app_version=${{ steps.string.outputs.lowercase }}:latest,app_compilation_date=${{ steps.current-time.outputs.formattedTime }}
