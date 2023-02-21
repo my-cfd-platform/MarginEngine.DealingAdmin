@@ -2,4 +2,13 @@
 
 <PageTitle>Dealing Admin</PageTitle>
 
+@code {
+    [Inject]
+    public IJSRuntime JsRuntime { get; set; }
 
+    protected override async void OnInitialized()
+    {
+        var uiVersion = Environment.GetEnvironmentVariable("UI_VERSION");
+        await JsRuntime.InvokeVoidAsync("console.log", $"UI Version: {uiVersion}");
+    }
+}
