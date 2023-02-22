@@ -5,8 +5,10 @@ using CsvHelper.Configuration;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
 using DealingAdmin.Abstractions.Providers.Interfaces;
+using DealingAdmin.Services.Contracts;
 using DotNetCoreDecorators;
 using Microsoft.AspNetCore.Components.Forms;
+using MyServiceBus.Sdk;
 using Serilog.Core;
 using SimpleTrading.Abstraction.Candles;
 using SimpleTrading.Abstraction.Trading.Instruments;
@@ -15,8 +17,8 @@ using SimpleTrading.CandlesHistory.AzureStorage;
 using SimpleTrading.CandlesHistory.Grpc;
 using SimpleTrading.CandlesHistory.Grpc.Contracts;
 using SimpleTrading.CandlesHistory.Grpc.Models;
-using SimpleTrading.ServiceBus.Contracts;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+//using SimpleTrading.ServiceBus.Contracts;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
 
 namespace DealingAdmin.Services
 {
@@ -39,7 +41,7 @@ namespace DealingAdmin.Services
 
         private readonly ISimpleTradingCandlesHistoryGrpc _candlesHistoryGrpc;
 
-        public static CandlesHistoryMyServiceBusPublisher _candlesHistoryPublisher;
+        public static MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract> _candlesHistoryPublisher;
 
         private readonly ICache<ITradingInstrument> _instrumentsCache;
 
@@ -50,7 +52,7 @@ namespace DealingAdmin.Services
             ISimpleTradingCandlesHistoryGrpc candlesHistoryGrpc,
             ICandlesPersistentStorage candlesPersistentStorage,
             ICache<ITradingInstrument> instrumentsCache,
-            CandlesHistoryMyServiceBusPublisher candlesHistoryPublisher,
+            MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract> candlesHistoryPublisher,
             CandlesServiceSettings serviceSettings,
             Logger logger,
             IUserMessageService userMessageService

@@ -31,14 +31,18 @@ using SimpleTrading.Engine.Grpc;
 using SimpleTrading.MyNoSqlRepositories;
 using SimpleTrading.PersonalData.Grpc;
 using SimpleTrading.QuotesFeedRouter.Abstractions;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
-using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
 using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.TradeLog.Grpc;
 using System;
 using System.Collections.Generic;
 using DealingAdmin.Abstractions.Providers.Interfaces;
+using DealingAdmin.Services.Contracts;
 using DealingAdmin.Services.Providers;
+using MyServiceBus.Abstractions;
+using MyServiceBus.Sdk;
+//using SimpleTrading.ServiceBus.Contracts;
 
 namespace DealingAdmin
 {
@@ -347,26 +351,58 @@ namespace DealingAdmin
             var serviceBusTcpClient = new MyServiceBusTcpClient(
                 () => settingsModel.PricesMyServiceBusReader,
                 AppName);
-
+            /*
             services.AddSingleton(new UnfilteredBidAskMyServiceBusSubscriber(
                 serviceBusTcpClient,
                 AppName,
                 MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
                 false));
 
-            services.AddSingleton(new BidAskMyServiceBusSubscriber(
+            */
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk>(
                 serviceBusTcpClient,
+                "unfiltered-bidask",
                 AppName,
-                MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
-                "bidask",
+                TopicQueueType.DeleteOnDisconnect,
                 false));
 
-            services.AddSingleton(new UnfilteredBidAskMyServiceBusPublisher(serviceBusTcpClient));
+            /*
+                services.AddSingleton(new BidAskMyServiceBusSubscriber(
+                    serviceBusTcpClient,
+                    AppName,
+                    MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
+                    "bidask",
+                    false));
+            */
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<IBidAsk>( serviceBusTcpClient,
+                AppName,
+                "bidask",
+                TopicQueueType.DeleteOnDisconnect,
+                false));
+            
+            //services.AddSingleton(new UnfilteredBidAskMyServiceBusPublisher(serviceBusTcpClient));
+            services.AddSingleton(new MyServiceBusPublisher<IUnfilteredBidAsk>(
+                serviceBusTcpClient,
+                "unfiltered-bidask",
+                true,
+                null
+            ));
+            
+            //services.AddSingleton(new BidAskMyServiceBusPublisher(serviceBusTcpClient));
+            services.AddSingleton(new MyServiceBusPublisher<IBidAsk>(
+                serviceBusTcpClient,
+                "bidask",
+                true,
+                null
+            ));
 
-            services.AddSingleton(new BidAskMyServiceBusPublisher(serviceBusTcpClient));
-
-            services.AddSingleton(new CandlesHistoryMyServiceBusPublisher(serviceBusTcpClient));
-
+            //services.AddSingleton(new CandlesHistoryMyServiceBusPublisher(serviceBusTcpClient));
+            services.AddSingleton(new MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract>(
+                serviceBusTcpClient,
+                "update-candles-history",
+                true,
+                null
+            ));
             return serviceBusTcpClient;
         }
 

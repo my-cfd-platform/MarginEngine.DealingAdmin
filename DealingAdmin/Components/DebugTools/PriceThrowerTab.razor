@@ -7,12 +7,14 @@
 @using System.IO
 @using System.Diagnostics
 @using DealingAdmin.Abstractions.Providers.Interfaces
+@using MyServiceBus.Sdk
+@using SimpleTrading.Abstraction.BidAsk
 @using SimpleTrading.Abstraction.Trading.Instruments
-@using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk
+@*using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk*@
 
 @inject ICache<ITradingInstrument> InstrumentsCache
 @inject IUserMessageService MessageService
-@inject BidAskMyServiceBusPublisher bidAskPublisher
+@inject MyServiceBusPublisher<IBidAsk> bidAskPublisher
 @inject ISnackbar snackbar
 @inject AdminAppSettings appSettings
 @inject Logger logger

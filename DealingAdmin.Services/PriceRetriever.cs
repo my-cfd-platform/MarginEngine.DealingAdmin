@@ -1,23 +1,24 @@
 ﻿using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
+using MyServiceBus.Sdk;
 using SimpleTrading.Abstraction.BidAsk;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
-using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
 
 namespace DealingAdmin.Services
 {
     public class PriceRetriever : IPriceRetriever
     {
         private readonly IBidAskCache _bidAskCache;
-        private readonly BidAskMyServiceBusSubscriber _bidAskSubscriber;
-        private readonly UnfilteredBidAskMyServiceBusSubscriber _unfilteredBidAskSubscriber;
+        private readonly MyServiceBusSubscriberBatchWithoutVersion<IBidAsk> _bidAskSubscriber;
+        private readonly MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk> _unfilteredBidAskSubscriber;
 
         private readonly PriceAggregator priceAggregator = new PriceAggregator();
 
         public PriceRetriever(
             IBidAskCache bidAskCache,
-            BidAskMyServiceBusSubscriber bidAskSubscriber,
-            UnfilteredBidAskMyServiceBusSubscriber unfilteredBidAskSubscriber)
+            MyServiceBusSubscriberBatchWithoutVersion<IBidAsk> bidAskSubscriber,
+            MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk> unfilteredBidAskSubscriber)
         {
             _bidAskCache = bidAskCache;
             _bidAskSubscriber = bidAskSubscriber;
