@@ -6,7 +6,6 @@ using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MyNoSqlServer.DataReader;
 using MyPostgreSQL;
-using MyServiceBus.TcpClient;
 using ProtoBuf.Grpc.Client;
 using Serilog;
 using SimpleTrading.Abstraction.BidAsk;
@@ -42,6 +41,8 @@ using DealingAdmin.Services.Contracts;
 using DealingAdmin.Services.Providers;
 using MyServiceBus.Abstractions;
 using MyServiceBus.Sdk;
+using MyServiceBus.TcpClient;
+
 //using SimpleTrading.ServiceBus.Contracts;
 
 namespace DealingAdmin
@@ -375,8 +376,8 @@ namespace DealingAdmin
                     false));
             */
             services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<IBidAsk>( serviceBusTcpClient,
-                AppName,
                 "bidask",
+                AppName,
                 TopicQueueType.DeleteOnDisconnect,
                 false));
             
