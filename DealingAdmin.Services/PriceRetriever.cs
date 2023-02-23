@@ -1,24 +1,23 @@
 ﻿using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
+using DealingAdmin.Abstractions.Models.BidAskSb;
 using MyServiceBus.Sdk;
 using SimpleTrading.Abstraction.BidAsk;
-//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
-//using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
 
 namespace DealingAdmin.Services
 {
     public class PriceRetriever : IPriceRetriever
     {
         private readonly IBidAskCache _bidAskCache;
-        private readonly MyServiceBusSubscriberBatchWithoutVersion<IBidAsk> _bidAskSubscriber;
-        private readonly MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk> _unfilteredBidAskSubscriber;
+        private readonly MyServiceBusSubscriberBatchWithoutVersion<BidAskSb> _bidAskSubscriber;
+        private readonly MyServiceBusSubscriberBatchWithoutVersion<UnfilteredBidAskSb> _unfilteredBidAskSubscriber;
 
-        private readonly PriceAggregator priceAggregator = new PriceAggregator();
+        private readonly PriceAggregator priceAggregator = new();
 
         public PriceRetriever(
             IBidAskCache bidAskCache,
-            MyServiceBusSubscriberBatchWithoutVersion<IBidAsk> bidAskSubscriber,
-            MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk> unfilteredBidAskSubscriber)
+            MyServiceBusSubscriberBatchWithoutVersion<BidAskSb> bidAskSubscriber,
+            MyServiceBusSubscriberBatchWithoutVersion<UnfilteredBidAskSb> unfilteredBidAskSubscriber)
         {
             _bidAskCache = bidAskCache;
             _bidAskSubscriber = bidAskSubscriber;
@@ -28,19 +27,21 @@ namespace DealingAdmin.Services
 
             priceAggregator.UpdateBidAskCache(bidAsks);
 
-            _bidAskSubscriber.Subscribe(bidAsk =>
-            {
-                priceAggregator.UpdateBidAsk(bidAsk);
-                return new ValueTask();
-            });
+            _bidAskSubscriber.Subscribe(ProcessBidAsk);
 
-            _unfilteredBidAskSubscriber.Subscribe(bidAsk =>
-            {
-                var now = DateTime.UtcNow;
-                var timeDelay = now.Subtract(bidAsk.DateTime);
-                priceAggregator.UpdateUnfilteredBidAsk(bidAsk);
-                return new ValueTask();
-            });
+            _unfilteredBidAskSubscriber.Subscribe(ProcessUnfilteredBidAsk);
+        }
+
+        private ValueTask ProcessBidAsk(BidAskSb bidAsk)
+        {
+            priceAggregator.UpdateBidAsk(bidAsk.ToIBidAsk());
+            return new ValueTask();
+        }
+
+        private ValueTask ProcessUnfilteredBidAsk(UnfilteredBidAskSb bidAsk)
+        {
+            priceAggregator.UpdateUnfilteredBidAsk(bidAsk.ToUnfilteredIBidAsk());
+            return new ValueTask();
         }
 
         public IEnumerable<BidAskModel> GetAllBidAsks() =>

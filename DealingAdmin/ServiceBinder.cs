@@ -1,11 +1,19 @@
 using DealingAdmin.Abstractions;
+using DealingAdmin.Abstractions.Interfaces;
+using DealingAdmin.Abstractions.Models.BidAskSb;
+using DealingAdmin.Abstractions.Providers.Interfaces;
 using DealingAdmin.Services;
+using DealingAdmin.Services.Contracts;
+using DealingAdmin.Services.Providers;
 using DealingAdmin.Shared.Services;
 using DealingAdmin.Validators;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MyNoSqlServer.DataReader;
 using MyPostgreSQL;
+using MyServiceBus.Abstractions;
+using MyServiceBus.Sdk;
+using MyServiceBus.TcpClient;
 using ProtoBuf.Grpc.Client;
 using Serilog;
 using SimpleTrading.Abstraction.BidAsk;
@@ -17,7 +25,6 @@ using SimpleTrading.Abstraction.Trading;
 using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.InstrumentsGroup;
 using SimpleTrading.Abstraction.Trading.Profiles;
-using SimpleTrading.Abstraction.Trading.Settings;
 using SimpleTrading.Abstraction.Trading.Swaps;
 using SimpleTrading.Admin.Grpc;
 using SimpleTrading.Auth.Grpc;
@@ -36,12 +43,6 @@ using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.TradeLog.Grpc;
 using System;
 using System.Collections.Generic;
-using DealingAdmin.Abstractions.Providers.Interfaces;
-using DealingAdmin.Services.Contracts;
-using DealingAdmin.Services.Providers;
-using MyServiceBus.Abstractions;
-using MyServiceBus.Sdk;
-using MyServiceBus.TcpClient;
 
 //using SimpleTrading.ServiceBus.Contracts;
 
@@ -189,7 +190,7 @@ namespace DealingAdmin
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton(CommonMyNoSqlServerFactory.CreateTradingInstrumentMyNoSqlRepository(
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
-            
+
 
             #endregion
 
@@ -352,52 +353,34 @@ namespace DealingAdmin
             var serviceBusTcpClient = new MyServiceBusTcpClient(
                 () => settingsModel.PricesMyServiceBusReader,
                 AppName);
-            /*
-            services.AddSingleton(new UnfilteredBidAskMyServiceBusSubscriber(
-                serviceBusTcpClient,
-                AppName,
-                MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
-                false));
 
-            */
-            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<IUnfilteredBidAsk>(
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<UnfilteredBidAskSb>(
                 serviceBusTcpClient,
                 "unfiltered-bidask",
                 AppName,
                 TopicQueueType.DeleteOnDisconnect,
                 false));
 
-            /*
-                services.AddSingleton(new BidAskMyServiceBusSubscriber(
-                    serviceBusTcpClient,
-                    AppName,
-                    MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
-                    "bidask",
-                    false));
-            */
-            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<IBidAsk>( serviceBusTcpClient,
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<BidAskSb>(serviceBusTcpClient,
                 "bidask",
                 AppName,
                 TopicQueueType.DeleteOnDisconnect,
                 false));
-            
-            //services.AddSingleton(new UnfilteredBidAskMyServiceBusPublisher(serviceBusTcpClient));
+
             services.AddSingleton(new MyServiceBusPublisher<IUnfilteredBidAsk>(
                 serviceBusTcpClient,
                 "unfiltered-bidask",
                 true,
                 null
             ));
-            
-            //services.AddSingleton(new BidAskMyServiceBusPublisher(serviceBusTcpClient));
-            services.AddSingleton(new MyServiceBusPublisher<IBidAsk>(
+
+            services.AddSingleton(new MyServiceBusPublisher<IBidAskSb>(
                 serviceBusTcpClient,
                 "bidask",
                 true,
                 null
             ));
 
-            //services.AddSingleton(new CandlesHistoryMyServiceBusPublisher(serviceBusTcpClient));
             services.AddSingleton(new MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract>(
                 serviceBusTcpClient,
                 "update-candles-history",

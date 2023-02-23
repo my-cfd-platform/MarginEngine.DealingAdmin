@@ -28,7 +28,7 @@
     </Col>   
 </AntDesign.Row>
 
-@if (isLoading)
+@if (_isLoading)
 {
     <Spin Tip="Loading...">
     </Spin>
@@ -69,7 +69,7 @@ else if (traderNotFound.HasValue && !traderNotFound.Value)
 @code {
     private string SelectedBrandTabKey { get; set; }
     private string SelectedTabKey { get; set; }
-    private bool isLoading;
+    private bool _isLoading;
     private string searchPhrase = String.Empty;
 
     private bool? traderNotFound = null;
@@ -88,7 +88,7 @@ else if (traderNotFound.HasValue && !traderNotFound.Value)
 
     private async Task OnSearch()
     {
-        if (isLoading)
+        if (_isLoading)
         {
             return;
         }
@@ -100,7 +100,7 @@ else if (traderNotFound.HasValue && !traderNotFound.Value)
 
         try
         {
-            isLoading = true;
+            _isLoading = true;
 
             traderBrands = new List<TraderBrandSearchModel>();
             activeBrandTab = null;
@@ -152,7 +152,7 @@ else if (traderNotFound.HasValue && !traderNotFound.Value)
         }
         finally
         {
-            isLoading = false;
+            _isLoading = false;
         }
     }
 

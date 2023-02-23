@@ -6,15 +6,16 @@
 @using SimpleTrading.Abstraction.Trading.Settings
 @using System.IO
 @using System.Diagnostics
+@using DealingAdmin.Abstractions.Interfaces
+@using DealingAdmin.Abstractions.Models.BidAskSb
 @using DealingAdmin.Abstractions.Providers.Interfaces
 @using MyServiceBus.Sdk
 @using SimpleTrading.Abstraction.BidAsk
 @using SimpleTrading.Abstraction.Trading.Instruments
-@*using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk*@
 
 @inject ICache<ITradingInstrument> InstrumentsCache
 @inject IUserMessageService MessageService
-@inject MyServiceBusPublisher<IBidAsk> bidAskPublisher
+@inject MyServiceBusPublisher<IBidAskSb> bidAskPublisher
 @inject ISnackbar snackbar
 @inject AdminAppSettings appSettings
 @inject Logger logger
@@ -22,7 +23,7 @@
 <div style="width:600px;">
 <Title Level="4">Synthetic Price </Title>
 <Form @ref="priceForm"
-      Model="priceModel"
+      Model="_price"
       ValidateOnChange="@true"
       ValidateMode="@FormValidateMode.Rules"
       LabelColSpan="6"
@@ -56,7 +57,7 @@
                     OnClick="@SendPrice"
                     Type="@AntDesign.ButtonType.Primary"
                     Class="btn-text"
-                    Disabled="@(priceModel.Bid == 0 || priceModel.Ask == 0)">
+                    Disabled="@(_price.Bid == 0 || _price.Ask == 0)">
                     Send Price
                 </AntDesign.Button>
             </Col>
@@ -66,10 +67,10 @@
 </div>
 
 @code {
-    AntDesign.Form<PriceThrowerModel> priceForm;
+    AntDesign.Form<PriceThrower> priceForm;
 
     List<string> instrumentIds = new List<string>();
-    PriceThrowerModel priceModel = new();
+    PriceThrower _price = new();
 
     private FormValidationRule[] RequiredRule = { new FormValidationRule { Required = true } };
     private FormValidationRule[] RequiredNumberRule = { new FormValidationRule { Required = true, Type = FormFieldType.Number } };
@@ -82,7 +83,7 @@
 
         if (instrumentIds.Any())
         {
-            priceModel.Id = instrumentIds.First();
+            _price.Id = instrumentIds.First();
         }
 
         CrudApiKeyRule = new FormValidationRule[]
@@ -108,19 +109,26 @@
                 return;
             }
 
-            await bidAskPublisher.PublishAsync(new PriceThrowerModel
-            {
-                Id = priceModel.Id,
-                Bid = priceModel.Bid,
-                Ask = priceModel.Ask
-            });
+            await bidAskPublisher.PublishAsync(new BidAskSb
+                {
+                    Id = _price.Id,
+                    Bid = _price.Bid,
+                    Ask = _price.Ask,
+                    JsUnixTime = GetJsUnixTime(DateTime.UtcNow)
+                });
 
-            snackbar.Add($"Price for {priceModel.Id} [B:{priceModel.Bid}|A:{priceModel.Ask}] published", Severity.Success);
+            snackbar.Add($"Price for {_price.Id} [B:{_price.Bid}|A:{_price.Ask}] published", Severity.Success);
         }
         catch(Exception ex)
         {
+            //todo should it be an error?
             logger.Error(ex, ex.Message);
-            snackbar.Add($"Error occured: {ex.Message}", Severity.Error);
+            snackbar.Add($"Error occurred: {ex.Message}", Severity.Error);
         }
+    }
+
+    private ulong GetJsUnixTime(DateTime time)
+    {
+        return (ulong)time.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
     }
 }
