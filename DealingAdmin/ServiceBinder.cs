@@ -214,6 +214,16 @@ namespace DealingAdmin
 
             #endregion
 
+            #region Default Values
+
+            // Repository
+            services.AddSingleton<IRepository<IDefaultValues>>(
+                new DefaultValuesRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+            
+            // Service
+            services.AddSingleton<IDefaultValuesService, DefaultValuesService>();
+            #endregion
+
             #endregion
 
 

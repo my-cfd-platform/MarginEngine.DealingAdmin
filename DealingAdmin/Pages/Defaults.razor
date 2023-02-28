@@ -1,17 +1,23 @@
 @page "/Defaults"
 
 @using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Shared.Services
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Markups
 @using SimpleTrading.Common.Abstractions.DefaultValues
 @using SimpleTrading.QuotesFeedRouter.Abstractions
 @using SimpleTrading.Common.Abstractions.Images
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Extensions
 
 @inject IAvailableLiquidityProviders AvailableLiquidityProviders
 @inject IMarkupProfilesRepository MarkupProfilesRepository
+@inject StateManager AppState
+@inject LiveDemoServiceMapper LiveDemoServices;
 @inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
 @inject IDefaultMarkupProfileWriter DefMarkupProfileWriter 
 @inject IDefaultValuesRepository DefValuesRepository
+@inject IDefaultValuesService DefValuesService;
 @inject ISnackbar Snackbar
 @inject Logger Logger
 
@@ -29,7 +35,7 @@
                         <AntDesign.Button
                             Class="btn-text bg-color-aquamarine" 
                             OnClick="SaveDefaultLp"
-                            Disabled="@(String.IsNullOrEmpty(_selectedLiquidityProvider))">Save</AntDesign.Button>
+                            Disabled="@(_selectedLiquidityProvider.IsNullOrEmpty())">Save</AntDesign.Button>
                     </Col>
                     <Col Span="12" Class="center-middle">
                         <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultLp">Reset</AntDesign.Button>
@@ -41,22 +47,44 @@
     <TabPane Tab="MARKUP PROFILE" Key="MarkupProfile" Class="tab-text">
         <Card Title="Default Markup Profile" Class="my-2" Style="width: 300px;">
             <Body>
-                <Select DataSource="@_markupProfiles"
+            <Select DataSource="@_markupProfiles"
                     @bind-Value="@_selectedMarkupProfile"
-	                TItemValue="string"
-	                TItem="string">
-                </Select>
-                <AntDesign.Row Class="center-middle mt-5">
-                    <Col Span="12" Class="center-middle">
-                        <AntDesign.Button 
-                            Class="btn-text bg-color-aquamarine"
-                            OnClick="SaveDefaultMarkup" 
-                            Disabled="@(String.IsNullOrEmpty(_selectedMarkupProfile))">Save</AntDesign.Button>
-                    </Col>
-                    <Col Span="12" Class="center-middle">
-                        <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultMarkup">Reset</AntDesign.Button>
-                    </Col>
-                </AntDesign.Row>
+                    TItemValue="string"
+                    TItem="string">
+            </Select>
+            <AntDesign.Row Class="center-middle mt-5">
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button 
+                        Class="btn-text bg-color-aquamarine"
+                        OnClick="SaveDefaultMarkup" 
+                        Disabled="@(_selectedMarkupProfile.IsNullOrEmpty())">Save</AntDesign.Button>
+                </Col>
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultMarkup">Reset</AntDesign.Button>
+                </Col>
+            </AntDesign.Row>
+            </Body>
+        </Card>
+    </TabPane>
+    <TabPane Tab="TRADING GROUP" Key="TradingGroup" Class="tab-text">
+        <Card Title="Default Trading Group" Class="my-2" Style="width: 300px;">
+            <Body>
+            <Select DataSource="@_tradingGroups"
+                    @bind-Value="@_selectedTradingGroup"
+                    TItemValue="string"
+                    TItem="string">
+            </Select>
+            <AntDesign.Row Class="center-middle mt-5">
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button 
+                        Class="btn-text bg-color-aquamarine"
+                        OnClick="SaveDefaultTradingGroupAsync" 
+                        Disabled="@(string.IsNullOrEmpty(_selectedTradingGroup))">Save</AntDesign.Button>
+                </Col>
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetTradingGroupAsync">Reset</AntDesign.Button>
+                </Col>
+            </AntDesign.Row>
             </Body>
         </Card>
     </TabPane>
@@ -95,9 +123,11 @@
 
 @code {
     private IEnumerable<string> _liquidityProviders;
+    private IEnumerable<string> _tradingGroups;
     private IEnumerable<string> _markupProfiles;
 
     string _selectedLiquidityProvider;
+    string _selectedTradingGroup;
     string _selectedMarkupProfile;
     string _defaultAvatarSvgSrc;
     string _defaultAvatarPngSrc;
@@ -112,16 +142,23 @@
     {
         _liquidityProviders = AvailableLiquidityProviders.GetLiquidityProviders();
         _markupProfiles = (await MarkupProfilesRepository.GetAllAsync()).Select(x => x.ProfileId);
+        _markupProfiles = (await MarkupProfilesRepository.GetAllAsync()).Select(x => x.ProfileId);
         _selectedLiquidityProvider = await DefLiquidityProviderWriter.GetAsync();
         _selectedMarkupProfile = await DefMarkupProfileWriter.GetAsync();
+
+        _tradingGroups = (await LiveDemoServices.GetContext(AppState.IsLive)
+            .TradingGroupsRepository.GetAllAsync()).Select(TradingGroupModel.Create).Select(tg=>tg.Id).ToList();
+        _selectedTradingGroup = await GetDefaultTradingGroupValueAsync();
 
         var avatarSvg = await DefValuesRepository.GetTradingInstrumentAvatarSvgAsync();
         var avatarPng = await DefValuesRepository.GetTradingInstrumentAvatarPngAsync();
         _defaultAvatarSvgSrc = $"{FormatUtils.ImageSvgDataPrefix}{avatarSvg}";
         _defaultAvatarPngSrc = $"{FormatUtils.ImagePngDataPrefix}{avatarPng}";
-        
+
         await base.OnInitializedAsync();
     }
+
+    #region Default LP
 
     private async void SaveDefaultLp()
     {
@@ -143,6 +180,36 @@
         StateHasChanged();
     }
 
+    #endregion
+
+    #region Default Trading Group
+
+    private string GetValueNameSuffix()
+    {
+        return AppState.IsLive ? "live" : "demo";
+    }
+
+    private async Task<string> GetDefaultTradingGroupValueAsync()
+    {
+        return await DefValuesService.GetValueAsync("defaulttg", GetValueNameSuffix());
+    }
+
+    private async void SaveDefaultTradingGroupAsync()
+    {
+        await DefValuesService.SetValueAsync("defaulttg", _selectedTradingGroup, GetValueNameSuffix());
+        Snackbar.Add($"Default Trading Group is set to '{_selectedTradingGroup}'", Severity.Success);
+    }
+
+    private async void ResetTradingGroupAsync()
+    {
+        _selectedTradingGroup = await GetDefaultTradingGroupValueAsync();
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Default Markup
+
     private async void SaveDefaultMarkup()
     {
         try
@@ -162,6 +229,10 @@
         _selectedMarkupProfile = await DefMarkupProfileWriter.GetAsync();
         this.StateHasChanged();
     }
+    
+    #endregion
+
+    #region Default Avatar
 
     private void ImageFileChanged(InputFileChangeEventArgs e)
     {
@@ -223,4 +294,6 @@
             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
+
+    #endregion
 }

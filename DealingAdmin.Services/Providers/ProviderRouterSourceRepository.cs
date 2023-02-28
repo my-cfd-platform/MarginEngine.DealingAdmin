@@ -26,6 +26,12 @@ public class ProviderRouterSourceRepository : IRepository<IProviderRouterSource>
         return await _table.GetAsync(partitionKey);
     }
 
+    public async Task<IProviderRouterSource> GetAsync(string key)
+    {
+        var partitionKey = ProviderRouterSourceEntity.GeneratePartitionKey();
+        return await _table.GetAsync(partitionKey, key);
+    }
+
     public async Task UpdateAsync(IProviderRouterSource item)
     {
         var entity = ProviderRouterSourceEntity.Create(item);

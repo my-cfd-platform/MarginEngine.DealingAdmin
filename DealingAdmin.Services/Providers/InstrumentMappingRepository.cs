@@ -26,6 +26,12 @@ public class InstrumentMappingRepository : IRepository<IProviderInstrumentMap>
         return await _table.GetAsync(partitionKey);
     }
 
+    public async Task<IProviderInstrumentMap> GetAsync(string key)
+    {
+        var partitionKey = ProviderInstrumentEntity.GeneratePartitionKey();
+        return await _table.GetAsync(partitionKey, key);
+    }
+
     public async Task UpdateAsync(IProviderInstrumentMap item)
     {
         var entity = ProviderInstrumentEntity.Create(item);
