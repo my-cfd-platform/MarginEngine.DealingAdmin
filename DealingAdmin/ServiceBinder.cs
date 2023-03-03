@@ -222,6 +222,11 @@ namespace DealingAdmin
             
             // Service
             services.AddSingleton<IDefaultValuesService, DefaultValuesService>();
+
+            // Default Favorite Instruments Repository
+            services.AddSingleton<IRepository<IDefaultFavoriteInstruments>>(
+                new DefaultFavoriteInstrumentsRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
             #endregion
 
             #endregion
@@ -360,6 +365,10 @@ namespace DealingAdmin
 
         public static MyServiceBusTcpClient BindServiceBus(this IServiceCollection services, SettingsModel settingsModel)
         {
+            var appName = AppName;
+            #if DEBUG
+            appName += "-dev";
+            #endif
             var serviceBusTcpClient = new MyServiceBusTcpClient(
                 () => settingsModel.PricesMyServiceBusReader,
                 AppName);
@@ -367,13 +376,13 @@ namespace DealingAdmin
             services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<UnfilteredBidAskSb>(
                 serviceBusTcpClient,
                 "unfiltered-bidask",
-                AppName,
+                appName,
                 TopicQueueType.DeleteOnDisconnect,
                 false));
 
             services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<BidAskSb>(serviceBusTcpClient,
                 "bidask",
-                AppName,
+                appName,
                 TopicQueueType.DeleteOnDisconnect,
                 false));
 
