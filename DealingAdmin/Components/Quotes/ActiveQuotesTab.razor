@@ -1,6 +1,7 @@
 ﻿@using AntDesign
 @using DealingAdmin.Abstractions
 @using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
 @using DealingAdmin.Shared.Services
 @using SimpleTrading.Abstraction.BidAsk
 @using SimpleTrading.Abstraction.Trading.Instruments
@@ -8,7 +9,7 @@
 @using SimpleTrading.Abstraction.Trading.Settings
 @using SimpleTrading.Common.MyNoSql.DefaultValues
 
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ILiquidityProviderReader LpReader
 @inject IQuoteSourceService QuoteSourceService
 @inject IDefaultLiquidityProviderWriter DefaultLpWriter
@@ -21,46 +22,44 @@
            PageSize="999999"
            HidePagination="@true"
            ScrollY="calc(100vh - 160px)">
-        <RowTemplate> 
-            <AntDesign.Column Title="Instrument"
-                    @bind-Field="@context.Name"
-                    TData="string"
-                    Width="140"
-                    Filters="instrumentFilters" 
-                    Sortable/>
-            <AntDesign.Column Title="Asset Group"
-                    @bind-Field="@context.AssetGroup"
-                    TData="InstrumentAssetGroup"
-                    Width="200"
-                    SorterCompare="@((a,b) => (int)a - (int)b)"
-                    SortDirections="new[] { AntDesign.SortDirection.Descending, AntDesign.SortDirection.Ascending }"
-                    Filterable>
-                    <span>@context.AssetGroupName</span>
-            </AntDesign.Column>
-            <AntDesign.Column Title="Quotes"  
-                    Field="@context.Id">
-                <TitleTemplate>
-                    <div class="grid-container-lp-quote-line">
-                        <div></div>
-                        <div></div>
-                        <div>Bid</div>
-                        <div></div>
-                        <div>Ask</div>
-                        <div></div>
-                        <div>Spread</div>
-                        <div></div>
-                        <div>DateTime</div>
-                    </div>
-                </TitleTemplate>
-                <ChildContent>
-                    <InstrumentAllQuotes
-                        Instrument="context"
-                        ProvidersList="@liquidityProvidersList"
-                        ActiveProviderId="@dictInstrumentProviderMaps[context.Id]"/>
-                </ChildContent>               
-            </AntDesign.Column>
-        </RowTemplate>
-    </Table>
+      <AntDesign.Column Title="Instrument"
+                @bind-Field="@context.Name"
+                TData="string"
+                Width="140"
+                Filters="instrumentFilters" 
+                Sortable/>
+        <AntDesign.Column Title="Asset Group"
+                @bind-Field="@context.AssetGroup"
+                TData="InstrumentAssetGroup"
+                Width="200"
+                SorterCompare="@((a,b) => (int)a - (int)b)"
+                SortDirections="new[] { AntDesign.SortDirection.Descending, AntDesign.SortDirection.Ascending }"
+                Filterable>
+                <span>@context.AssetGroupName</span>
+        </AntDesign.Column>
+        <AntDesign.Column Title="Quotes"  
+                Field="@context.Id">
+            <TitleTemplate>
+                <div class="grid-container-lp-quote-line">
+                    <div></div>
+                    <div></div>
+                    <div>Bid</div>
+                    <div></div>
+                    <div>Ask</div>
+                    <div></div>
+                    <div>Spread</div>
+                    <div></div>
+                    <div>DateTime</div>
+                </div>
+            </TitleTemplate>
+            <ChildContent>
+                <InstrumentAllQuotes
+                    Instrument="context"
+                    ProvidersList="@liquidityProvidersList"
+                    ActiveProviderId="@dictInstrumentProviderMaps[context.Id]"/>
+            </ChildContent>               
+        </AntDesign.Column>
+  </Table>
 </div>
  
 @code {

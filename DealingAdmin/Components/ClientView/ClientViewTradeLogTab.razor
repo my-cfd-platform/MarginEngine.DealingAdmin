@@ -100,41 +100,41 @@
         ScrollY="calc(100vh - 320px)"
         @bind-PageIndex="_pageIndex"
         @bind-PageSize="_pageSize">
-    <RowTemplate> 
-        <AntDesign.Column Title="DateTime"
-                TData="DateTime"
-                @bind-Field="@context.DateTime"
-                Format="@(FormatUtils.DateTimeCommonFormat)"
-                Sortable
-                Filterable
-                Width="200"/>
-        <AntDesign.Column Title="Process Id"
-                TData="string"
-                @bind-Field="@context.ProcessId"
-                Width="360"/>
-        <AntDesign.Column Title="Component"
-                TData="string"
-                @bind-Field="@context.Component"
-                Width="180"/>
-        <AntDesign.Column Title="Message"
-                TData="string"
-                @bind-Field="@context.Message"/>
-        <ActionColumn Title="Actions" Width="100">
-            <div>
-                <Tooltip Title="@("Show Details")">
-                    <a><i @onclick="()=>ShowEventDetails(context.Data)"
-                          class="material-icons color-primary">manage_search</i></a>
+
+    <AntDesign.Column Title="DateTime"
+            TData="DateTime"
+            @bind-Field="@context.DateTime"
+            Format="@(FormatUtils.DateTimeCommonFormat)"
+            Sortable
+            Filterable
+            Width="200"/>
+    <AntDesign.Column Title="Process Id"
+            TData="string"
+            @bind-Field="@context.ProcessId"
+            Width="360"/>
+    <AntDesign.Column Title="Component"
+            TData="string"
+            @bind-Field="@context.Component"
+            Width="180"/>
+    <AntDesign.Column Title="Message"
+            TData="string"
+            @bind-Field="@context.Message"/>
+    <ActionColumn Title="Actions" Width="100">
+        <div>
+            <Tooltip Title="@("Show Details")">
+                <a><i @onclick="()=>ShowEventDetails(context)"
+                      class="material-icons color-primary">manage_search</i></a>
+            </Tooltip>
+            @if (isCreatePositionEvent(context))
+            {
+                <Tooltip Title="@("Restore Active Position")">    
+                    <a><i @onclick="()=>RestoreActivePosition(context)"
+                          class="material-icons color-aquamarine">restore_page</i></a>
                 </Tooltip>
-                @if (isCreatePositionEvent(context))
-                {
-                    <Tooltip Title="@("Restore Active Position")">    
-                        <a><i @onclick="()=>RestoreActivePosition(context.Data)"
-                              class="material-icons color-aquamarine">restore_page</i></a>
-                    </Tooltip>
-                }
-            </div>
-        </ActionColumn>
-    </RowTemplate>
+            }
+        </div>
+    </ActionColumn>
+
 </Table>
 
 <Modal Title="Event Details"

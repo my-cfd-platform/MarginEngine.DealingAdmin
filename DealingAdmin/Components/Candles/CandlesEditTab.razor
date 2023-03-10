@@ -11,8 +11,10 @@
 @using SimpleTrading.CandlesHistory.Grpc.Contracts
 @using SimpleTrading.CandlesHistory.AzureStorage
 @using System.ComponentModel.DataAnnotations
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
 
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ICandlesService CandlesService
 @inject ISimpleTradingCandlesHistoryGrpc CandlesHistoryGrpc
 @inject IUserMessageService MessageService

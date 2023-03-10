@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using DealingAdmin.Abstractions.Models.LpSettings;
-using DealingAdmin.Shared.Services.Providers.Interfaces;
+using DealingAdmin.Abstractions.Providers.Interfaces;
 using MyNoSqlServer.Abstractions;
 
-namespace DealingAdmin.Shared.Services.Providers.Models;
+namespace DealingAdmin.Abstractions.Providers.Models;
 
 public class ProviderInstrumentMapMyNoSqlEntity : MyNoSqlDbEntity, IProviderInstrumentMap
 {

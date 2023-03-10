@@ -44,7 +44,18 @@
             OnClick="GoBack">Back</AntDesign.Button>
     </Col>
 </AntDesign.Row>
-
+<PageHeader Title="Profile Instruments" Class="m-0 p-0">
+    <PageHeaderExtra>
+        <AntDesign.Button 
+            OnClick="ShowLoadFileDialog" 
+            Type="@AntDesign.ButtonType.Primary"
+            Class="btn-text mx-3">Load from Excel file</AntDesign.Button>
+        <AntDesign.Button 
+            OnClick="ShowNewInstrumentDialog" 
+            Type="@AntDesign.ButtonType.Primary"
+            Class="btn-text">Add Instrument</AntDesign.Button>
+    </PageHeaderExtra>
+</PageHeader>
 <Table DataSource="@ProfileGroup.Instruments"
        TItem="SwapProfileModel"
        Bordered="@true"
@@ -52,50 +63,35 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 300px)" 
        PageSize="999">
-    <TitleTemplate>
-        <PageHeader Title="Profile Instruments" Class="m-0 p-0">
-            <PageHeaderExtra>
-                 <AntDesign.Button 
-                    OnClick="ShowLoadFileDialog" 
-                    Type="@AntDesign.ButtonType.Primary"
-                    Class="btn-text mx-3">Load from Excel file</AntDesign.Button>
-                 <AntDesign.Button 
-                    OnClick="ShowNewInstrumentDialog" 
-                    Type="@AntDesign.ButtonType.Primary"
-                    Class="btn-text">Add Instrument</AntDesign.Button>
-            </PageHeaderExtra>
-        </PageHeader>
-    </TitleTemplate>
-    <RowTemplate>           
-        <AntDesign.Column Title="Instrument Id"
-                TData="string"
-                DataIndex="InstrumentId"
-                Sortable/>
-        <AntDesign.Column Title="Long"
-                TData="double"
-                DataIndex="Long"
-                Sortable/>
-        <AntDesign.Column Title="Short"
-                TData="double"
-                DataIndex="Short"
-                Sortable/>
-        <ActionColumn Title="Actions">
-            <Tooltip Title="@("Edit")">
-                <a><i @onclick="()=>ShowEditInstrumentDialog(context)"
-                    class="material-icons color-primary">edit</i></a>
-            </Tooltip>
-            <Tooltip Title="@("Clone")">
-                <a><i @onclick="()=>CloneInstrument(context)"
-                    class="material-icons color-aquamarine">content_copy</i></a>
-            </Tooltip>
-            <Tooltip Title="@("Delete")">
-                <Popconfirm Title="Are you sure?" OkText="Confirm" CancelText="Cancel">
-                    <a><i @onclick="()=>DeleteInstrument(context)"
-                        class="material-icons color-crimson">delete_outline</i></a>
-                </Popconfirm>
-            </Tooltip>
-        </ActionColumn>
-    </RowTemplate>
+
+    <AntDesign.Column Title="Instrument Id"
+            TData="string"
+            DataIndex="InstrumentId"
+            Sortable/>
+    <AntDesign.Column Title="Long"
+            TData="double"
+            DataIndex="Long"
+            Sortable/>
+    <AntDesign.Column Title="Short"
+            TData="double"
+            DataIndex="Short"
+            Sortable/>
+    <ActionColumn Title="Actions">
+        <Tooltip Title="@("Edit")">
+            <a><i @onclick="()=>ShowEditInstrumentDialog(context)"
+                class="material-icons color-primary">edit</i></a>
+        </Tooltip>
+        <Tooltip Title="@("Clone")">
+            <a><i @onclick="()=>CloneInstrument(context)"
+                class="material-icons color-aquamarine">content_copy</i></a>
+        </Tooltip>
+        <Tooltip Title="@("Delete")">
+            <Popconfirm Title="Are you sure?" OkText="Confirm" CancelText="Cancel">
+                <a><i @onclick="()=>DeleteInstrument(context)"
+                    class="material-icons color-crimson">delete_outline</i></a>
+            </Popconfirm>
+        </Tooltip>
+    </ActionColumn>
 </Table>
 
 <Modal Title="@instrumentEditFormTitle"

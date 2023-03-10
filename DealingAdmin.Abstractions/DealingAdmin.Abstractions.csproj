@@ -9,12 +9,17 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.11" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+		<PackageReference Include="MyNoSqlServer.DataWriter" Version="1.8.13" />
 		<PackageReference Include="SimpleTrading.Abstraction" Version="2.0.24" />
 		<PackageReference Include="SimpleTrading.Auth.Grpc" Version="1.2.0" />
 		<PackageReference Include="SimpleTrading.Engine.Grpc" Version="1.0.55" />
 		<PackageReference Include="SimpleTrading.CandlesHistory.AzureStorage" Version="1.0.20" />
 		<PackageReference Include="SimpleTrading.QuotesFeedRouter.Abstractions" Version="1.0.2" />
 		<PackageReference Include="SimpleTrading.PersonalData.Grpc" Version="1.0.55" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Extensions\" />
 	</ItemGroup>
 
 </Project>

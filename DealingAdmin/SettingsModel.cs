@@ -5,12 +5,8 @@ namespace DealingAdmin
     [YamlAttributesOnly]
     public class SettingsModel
     {
-        [YamlProperty("DealingAdmin.MyNoSqlRestUrl")]
-        public string MyNoSqlRestUrl { get; set; }
-
-        [YamlProperty("DealingAdmin.MyNoSqlTcpUrl")]
-        public string MyNoSqlTcpUrl { get; set; }
-
+        [YamlProperty("DealingAdmin.AvailableLiquidityProviders")]
+        public string AvailableLiquidityProviders { get; set; }
         [YamlProperty("DealingAdmin.DictionariesMyNoSqlServerWriter")]
         public string DictionariesMyNoSqlServerWriter { get; set; }
 

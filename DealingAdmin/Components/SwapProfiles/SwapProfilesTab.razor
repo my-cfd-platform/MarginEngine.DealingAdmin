@@ -23,7 +23,7 @@
            HidePagination="@true"
            ScrollY="calc(100vh - 120px)"
            PageSize="999">
-        <RowTemplate>           
+         
             <AntDesign.Column Title="Profile Id"
                 DataIndex="ProfileId"
                 TData="string"
@@ -41,11 +41,11 @@
                         class="material-icons color-primary">edit</i></a>
                 </Tooltip>
                 <Tooltip Title="@("Clone")">
-                    <a><i @onclick="()=>CloneProfile(context)"
+                        <a><i @onclick="()=>CloneProfile(context)"
                         class="material-icons color-aquamarine">content_copy</i></a>
                 </Tooltip>
             </ActionColumn>
-        </RowTemplate>
+
     </Table>
 }
 else

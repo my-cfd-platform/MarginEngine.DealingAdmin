@@ -14,7 +14,7 @@
 @inject Logger logger
 
 <div style="width:750px;">
-<PageHeader Class="mb-2 p-0" Title="Instrument Groups">
+<PageHeader Class="m-0 p-0" Title="Instrument Groups">
     <PageHeaderExtra>
         <AntDesign.Button OnClick="ShowNewGroupDialog"         
             Type="@AntDesign.ButtonType.Primary"
@@ -29,24 +29,24 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 180px)"
        PageSize="999">
-    <RowTemplate>           
-        <AntDesign.Column Title="Id"
-                DataIndex="Id"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Name"
-                DataIndex="Name"
-                TData="string"
-                Sortable/>
-        <AntDesign.Column Title="Weight"
-                DataIndex="Weight" 
-                TData="int"
-                Sortable/>
-        <ActionColumn Title="Edit" Width="60">
-                <a><i @onclick="()=>ShowEditGroupDialog(context)"
-                    class="material-icons color-primary">edit</i></a>
-        </ActionColumn>
-    </RowTemplate>
+          
+    <AntDesign.Column Title="Id"
+            DataIndex="Id"
+            TData="string"
+            Sortable/>
+    <AntDesign.Column Title="Name"
+            DataIndex="Name"
+            TData="string"
+            Sortable/>
+    <AntDesign.Column Title="Weight"
+            DataIndex="Weight" 
+            TData="int"
+            Sortable/>
+    <ActionColumn Title="Edit" Width="60">
+            <a><i @onclick="()=>ShowEditGroupDialog(context)"
+                class="material-icons color-primary">edit</i></a>
+    </ActionColumn>
+
 </Table>
 </div>
 

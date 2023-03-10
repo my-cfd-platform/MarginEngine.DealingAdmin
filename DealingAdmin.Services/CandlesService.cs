@@ -4,17 +4,21 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using DealingAdmin.Abstractions;
 using DealingAdmin.Abstractions.Models;
+using DealingAdmin.Abstractions.Providers.Interfaces;
+using DealingAdmin.Services.Contracts;
 using DotNetCoreDecorators;
 using Microsoft.AspNetCore.Components.Forms;
+using MyServiceBus.Sdk;
 using Serilog.Core;
 using SimpleTrading.Abstraction.Candles;
+using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.Settings;
 using SimpleTrading.CandlesHistory.AzureStorage;
 using SimpleTrading.CandlesHistory.Grpc;
 using SimpleTrading.CandlesHistory.Grpc.Contracts;
 using SimpleTrading.CandlesHistory.Grpc.Models;
-using SimpleTrading.ServiceBus.Contracts;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+//using SimpleTrading.ServiceBus.Contracts;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
 
 namespace DealingAdmin.Services
 {
@@ -37,9 +41,9 @@ namespace DealingAdmin.Services
 
         private readonly ISimpleTradingCandlesHistoryGrpc _candlesHistoryGrpc;
 
-        public static CandlesHistoryMyServiceBusPublisher _candlesHistoryPublisher;
+        public static MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract> _candlesHistoryPublisher;
 
-        private readonly IInstrumentsCache _instrumentsCache;
+        private readonly ICache<ITradingInstrument> _instrumentsCache;
 
         private readonly Logger _logger;
         private readonly IUserMessageService _userMessageService;
@@ -47,8 +51,8 @@ namespace DealingAdmin.Services
         public CandlesService(
             ISimpleTradingCandlesHistoryGrpc candlesHistoryGrpc,
             ICandlesPersistentStorage candlesPersistentStorage,
-            IInstrumentsCache instrumentsCache,
-            CandlesHistoryMyServiceBusPublisher candlesHistoryPublisher,
+            ICache<ITradingInstrument> instrumentsCache,
+            MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract> candlesHistoryPublisher,
             CandlesServiceSettings serviceSettings,
             Logger logger,
             IUserMessageService userMessageService

@@ -6,10 +6,12 @@
 @using SimpleTrading.Abstraction.Candles
 @using System.IO
 @using System.Diagnostics
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
 @using SimpleTrading.CandlesHistory.Grpc
 @using SimpleTrading.CandlesHistory.Grpc.Contracts
 
-@inject IInstrumentsCache InstrumentsCache
+@inject ICache<ITradingInstrument> InstrumentsCache
 @inject ICandlesService CandlesService
 @inject ISimpleTradingCandlesHistoryGrpc CandlesHistoryGrpc
 @inject IUserMessageService MessageService

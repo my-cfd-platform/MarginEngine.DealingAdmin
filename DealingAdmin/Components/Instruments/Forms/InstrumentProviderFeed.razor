@@ -1,0 +1,163 @@
+﻿@using DealingAdmin.Shared.Models
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using Microsoft.AspNetCore.Components
+@using DealingAdmin.Abstractions.Extensions
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
+
+<Modal Title="@Title"
+       Visible="@Visible"
+       Closable=@true
+       OkText="@("Ok")"
+       OnOk="OkAction"
+       OnCancel="CloseForm"
+       Footer="@ModalFooter.DefaultOkFooter"
+       Width="650">
+    <div class="m-1">Liquidity Provider:</div>
+    <Select DataSource="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty())"
+            TItemValue="string"
+            TItem="ViewListItem"
+            LabelName="Text"
+            ValueName="Value"
+            Style="width:220px"
+            DropdownMaxWidth="200" 
+            ValueChanged="LpChange"/>
+
+    <Table DataSource="@_providerInstrumentInfoSource"
+           TItem="ProviderInstrumentInfo"
+           @bind-SelectedRows="_selectedProviderInstrumentInfo">
+        <ColumnDefinitions>
+            <ColumnDefinition Title="Symbol"
+                              Width="72"/>
+            <ColumnDefinition Title="Name"
+                              Width="160"/>
+            <ColumnDefinition Title="Base"
+                              Width="68"/>
+            <ColumnDefinition Title="Quote"
+                              Width="68"/>
+            <ColumnDefinition Title="Digits"
+                              Width="68"/>
+            <ColumnDefinition Title="TickSize"
+                              Width="80"/>
+            <Selection Type="@("radio")"/>
+        </ColumnDefinitions>
+        <RowTemplate>
+            <TableRow>
+                    @*Symbol*@
+                <TableCell>
+                        @context.Data.Symbol
+                </TableCell>
+                    @*Name*@
+                <TableCell>
+                        @context.Data.Name
+                </TableCell>
+                    @*Base*@
+                <TableCell>
+                        @context.Data.Base
+                </TableCell>
+                    @*Quote*@
+                <TableCell>
+                        @context.Data.Quote
+                </TableCell>
+                    @*Digits*@
+                <TableCell Align="ColumnAlign.Center">
+                        @context.Data.Digits
+                </TableCell>
+                    @*TickSize*@
+                <TableCell>
+                        @context.Data.TickSize
+                </TableCell>
+                    @*Select*@
+                <TableCell Align="ColumnAlign.Center">
+                    <Selection
+                        Key="@context.Data.Symbol" 
+                        Type="@("radio")"/>
+                </TableCell>
+            </TableRow>
+        </RowTemplate>
+    </Table>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public IEnumerable<ViewListItem> LiquidityProvidersViewList { get; set; }
+    [Parameter]
+    public TradingInstrumentViewModel Instrument { get; set; } = new();
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public bool Copy { get; set; }
+
+    private IEnumerable<ProviderInstrumentInfo> _providerInstrumentInfoSource = new List<ProviderInstrumentInfo>();
+
+    private IEnumerable<ProviderInstrumentInfo> _selectedProviderInstrumentInfo;
+
+    private string _editedLiquidityProviderId = "";
+
+    private async Task LpChange(string item)
+    {
+        if (_editedLiquidityProviderId != item)
+        {
+            await LpChanged(item).ConfigureAwait(false);
+        }
+        _editedLiquidityProviderId = item;
+    }
+
+    private async Task LpChanged(string item)
+    {
+        _providerInstrumentInfoSource = await ProviderInstrumentsInfo.InstrumentsInfo(item).ConfigureAwait(false);
+    }
+
+    private void OkAction()
+    {
+        CloseForm();
+        if (_selectedProviderInstrumentInfo == null)
+        {
+            return;
+        }
+        var info = _selectedProviderInstrumentInfo.FirstOrDefault();
+        AddFeed(info);
+        if (!Copy)
+            return;
+        CopyInstrument(info);
+    }
+
+    private void AddFeed(ProviderInstrumentInfo info)
+    {
+        //set LP id to the LP of the first assigned feed
+        if (!Instrument.LpSymbolDictionary.Any())
+        {
+            Instrument.LiquidityProviderId = _editedLiquidityProviderId;
+            Instrument.DefaultLiquidityProvider = false;
+        }
+
+        Instrument.LpSymbolDictionary[_editedLiquidityProviderId] = info.Symbol;
+        if (Instrument.LpSymbolDictionaryDelete.ContainsKey(_editedLiquidityProviderId))
+        {
+            Instrument.LpSymbolDictionaryDelete.Remove(_editedLiquidityProviderId);
+        }
+    }
+
+    private void CopyInstrument(ProviderInstrumentInfo info)
+    {
+        Instrument.Id = info.Symbol;
+        Instrument.Name = info.Name;
+        Instrument.Digits = info.Digits;
+        Instrument.Base = info.Base;
+        Instrument.Quote = info.Quote;
+        double.TryParse(info.TickSize, out var tickSize);
+        Instrument.TickSize = tickSize;
+    }
+
+    private void CloseForm()
+    {
+        Visible = false;
+        VisibleChanged.InvokeAsync(false);
+    }
+}

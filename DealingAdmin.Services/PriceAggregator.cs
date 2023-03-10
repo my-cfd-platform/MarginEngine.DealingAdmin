@@ -6,10 +6,10 @@ namespace DealingAdmin.Services
 {
     public class PriceAggregator : IPriceAggregator
     {
-        private ConcurrentDictionary<string, IBidAsk> bidAskCache = new ConcurrentDictionary<string, IBidAsk>();
+        private ConcurrentDictionary<string, IBidAsk> bidAskCache = new ();
 
         private ConcurrentDictionary<string, Dictionary<string, IUnfilteredBidAsk>> unfilteredBidAskCache
-          = new ConcurrentDictionary<string, Dictionary<string, IUnfilteredBidAsk>>();
+          = new ();
 
         public PriceAggregator()
         {

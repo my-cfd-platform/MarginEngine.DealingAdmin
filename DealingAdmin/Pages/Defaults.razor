@@ -1,34 +1,33 @@
 @page "/Defaults"
 
-@using AntDesign
-@using DealingAdmin.Abstractions
-@using DealingAdmin.Abstractions.Models
-@using DealingAdmin.Components.Instruments
-@using DealingAdmin.Components.Instruments.Forms
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Shared.Services
 @using Serilog.Core
 @using SimpleTrading.Abstraction.Markups
-@using SimpleTrading.Abstraction.Trading.Instruments
-@using SimpleTrading.Abstraction.Trading.InstrumentsGroup
-@using SimpleTrading.ClientApi.Services
 @using SimpleTrading.Common.Abstractions.DefaultValues
 @using SimpleTrading.QuotesFeedRouter.Abstractions
 @using SimpleTrading.Common.Abstractions.Images
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Extensions
+@using DealingAdmin.Components.Defaults
 
-@inject ILiquidityProviderReader liquidityProviderReader
-@inject IMarkupProfilesRepository markupProfilesRepository
-@inject IDefaultLiquidityProviderWriter defLiquidityProviderWriter
-@inject IDefaultMarkupProfileWriter defMarkupProfileWriter 
-@inject IDefaultValuesRepository defValuesRepository
-@inject IFileService fileService
-@inject ISnackbar snackbar
-@inject Logger logger
+@inject IAvailableLiquidityProviders AvailableLiquidityProviders
+@inject IMarkupProfilesRepository MarkupProfilesRepository
+@inject StateManager AppState
+@inject LiveDemoServiceMapper LiveDemoServices;
+@inject IDefaultLiquidityProviderWriter DefLiquidityProviderWriter
+@inject IDefaultMarkupProfileWriter DefMarkupProfileWriter 
+@inject IDefaultValuesRepository DefValuesRepository
+@inject IDefaultValuesService DefValuesService;
+@inject ISnackbar Snackbar
+@inject Logger Logger
 
 <Tabs Size="@TabSize.Large">
     <TabPane Tab="LIQUIDITY PROVIDER" Key="LiquidityProvider" Class="tab-text"> 
         <Card Title="Default Liquidity Provider" Class="my-2" Style="width: 300px;">
             <Body>
-                <Select DataSource="@liquidityProviders"
-                    @bind-Value="@selectedLiquidityProvider"
+                <Select DataSource="@_liquidityProviders"
+                    @bind-Value="@_selectedLiquidityProvider"
 	                TItemValue="string"
 	                TItem="string">
                 </Select>
@@ -36,11 +35,11 @@
                     <Col Span="12" Class="center-middle">
                         <AntDesign.Button
                             Class="btn-text bg-color-aquamarine" 
-                            OnClick="SaveDefaultLP"
-                            Disabled="@(String.IsNullOrEmpty(selectedLiquidityProvider))">Save</AntDesign.Button>
+                            OnClick="SaveDefaultLp"
+                            Disabled="@(_selectedLiquidityProvider.IsNullOrEmpty())">Save</AntDesign.Button>
                     </Col>
                     <Col Span="12" Class="center-middle">
-                        <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultLP">Reset</AntDesign.Button>
+                        <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultLp">Reset</AntDesign.Button>
                     </Col>
                 </AntDesign.Row>
             </Body>
@@ -49,48 +48,73 @@
     <TabPane Tab="MARKUP PROFILE" Key="MarkupProfile" Class="tab-text">
         <Card Title="Default Markup Profile" Class="my-2" Style="width: 300px;">
             <Body>
-                <Select DataSource="@markupProfiles"
-                    @bind-Value="@selectedMarkupProfile"
-	                TItemValue="string"
-	                TItem="string">
-                </Select>
-                <AntDesign.Row Class="center-middle mt-5">
-                    <Col Span="12" Class="center-middle">
-                        <AntDesign.Button 
-                            Class="btn-text bg-color-aquamarine"
-                            OnClick="SaveDefaultMarkup" 
-                            Disabled="@(String.IsNullOrEmpty(selectedMarkupProfile))">Save</AntDesign.Button>
-                    </Col>
-                    <Col Span="12" Class="center-middle">
-                        <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultMarkup">Reset</AntDesign.Button>
-                    </Col>
-                </AntDesign.Row>
+            <Select DataSource="@_markupProfiles"
+                    @bind-Value="@_selectedMarkupProfile"
+                    TItemValue="string"
+                    TItem="string">
+            </Select>
+            <AntDesign.Row Class="center-middle mt-5">
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button 
+                        Class="btn-text bg-color-aquamarine"
+                        OnClick="SaveDefaultMarkup" 
+                        Disabled="@(_selectedMarkupProfile.IsNullOrEmpty())">Save</AntDesign.Button>
+                </Col>
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetDefaultMarkup">Reset</AntDesign.Button>
+                </Col>
+            </AntDesign.Row>
             </Body>
         </Card>
+    </TabPane>
+    <TabPane Tab="TRADING GROUP" Key="TradingGroup" Class="tab-text">
+        <Card Title="Default Trading Group" Class="my-2" Style="width: 300px;">
+            <Body>
+            <Select DataSource="@_tradingGroups"
+                    @bind-Value="@_selectedTradingGroup"
+                    TItemValue="string"
+                    TItem="string">
+            </Select>
+            <AntDesign.Row Class="center-middle mt-5">
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button 
+                        Class="btn-text bg-color-aquamarine"
+                        OnClick="SaveDefaultTradingGroupAsync" 
+                        Disabled="@(string.IsNullOrEmpty(_selectedTradingGroup))">Save</AntDesign.Button>
+                </Col>
+                <Col Span="12" Class="center-middle">
+                    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="ResetTradingGroupAsync">Reset</AntDesign.Button>
+                </Col>
+            </AntDesign.Row>
+            </Body>
+        </Card>
+    </TabPane>
+    <TabPane Tab="FAVOURITE INSTRUMENTS" Key="FavouriteInstruments" Class="tab-text">
+        <FavouriteInstrumentsTab/>
     </TabPane>
     <TabPane Tab="INSTRUMENT AVATAR" Key="InstrumentAvatar" Class="tab-text">
         <Card Title="Default Instrument Avatar" Class="my-2" Style="width: 600px;">
             <Body>
                 <CardGrid Style="width:50%;text-align:center">
                     <div>Default SVG Avatar:</div>
-                    <Image Width="150px" Src="@defaultAvatarSvgSrc" PreviewVisible="@false" />
+                    <Image Width="150px" Src="@_defaultAvatarSvgSrc" PreviewVisible="@false" />
                 </CardGrid>
                 <CardGrid Style="width:50%;text-align:center">
                     <div>Default PNG Avatar:</div>
-                    <Image Width="150px" Src="@defaultAvatarPngSrc" PreviewVisible="@false" />
+                    <Image Width="150px" Src="@_defaultAvatarPngSrc" PreviewVisible="@false" />
                 </CardGrid>
                 <CardGrid Style="width:100%;" Class="my-3">
                     <AntDesign.Row>
                         <Col Span="18">
                             <div>Pick an image (svg/png) for new default avatar:</div>
-                            <InputFile AdditionalAttributes=@imageAcceptFilterDict OnChange="@ImageFileChanged"/>
+                            <InputFile AdditionalAttributes=@_imageAcceptFilterDict OnChange="@ImageFileChanged"/>
                         </Col>
                         <Col Span="6">
                             <AntDesign.Button Icon="upload"
                                 Type="primary"
                                 Class="btn-text"
                                 OnClick="@UploadAvatarImage"
-                                Disabled="@(imageFile == null)">
+                                Disabled="@(_imageFile == null)">
                                     <span>Upload</span>
                             </AntDesign.Button>
                         </Col>
@@ -102,78 +126,121 @@
 </Tabs>
 
 @code {
-    private IEnumerable<string> liquidityProviders;
-    private IEnumerable<string> markupProfiles;
+    private IEnumerable<string> _liquidityProviders;
+    private IEnumerable<string> _tradingGroups;
+    private IEnumerable<string> _markupProfiles;
 
-    string selectedLiquidityProvider;
-    string selectedMarkupProfile;
-    string defaultAvatarSvgSrc;
-    string defaultAvatarPngSrc;
-    IBrowserFile imageFile;
+    string _selectedLiquidityProvider;
+    string _selectedTradingGroup;
+    string _selectedMarkupProfile;
+    string _defaultAvatarSvgSrc;
+    string _defaultAvatarPngSrc;
+    IBrowserFile _imageFile;
 
-    Dictionary<string, object> imageAcceptFilterDict = new Dictionary<string, object>()
+    private readonly Dictionary<string, object> _imageAcceptFilterDict = new ()
     {
          { "accept", "image/png, image/svg+xml" }
     };
 
     protected override async Task OnInitializedAsync()
     {
-        liquidityProviders = await liquidityProviderReader.GetLiquidityProviders();
-        markupProfiles = (await markupProfilesRepository.GetAllAsync()).Select(x => x.ProfileId);
-        selectedLiquidityProvider = await defLiquidityProviderWriter.GetAsync();
-        selectedMarkupProfile = await defMarkupProfileWriter.GetAsync();
+        _liquidityProviders = AvailableLiquidityProviders.GetLiquidityProviders();
+        _markupProfiles = (await MarkupProfilesRepository.GetAllAsync()).Select(x => x.ProfileId);
+        _markupProfiles = (await MarkupProfilesRepository.GetAllAsync()).Select(x => x.ProfileId);
+        _selectedLiquidityProvider = await DefLiquidityProviderWriter.GetAsync();
+        _selectedMarkupProfile = await DefMarkupProfileWriter.GetAsync();
 
-        var avatarSvg = await defValuesRepository.GetTradingInstrumentAvatarSvgAsync();
-        var avatarPng = await defValuesRepository.GetTradingInstrumentAvatarPngAsync();
-        defaultAvatarSvgSrc = $"{FormatUtils.ImageSvgDataPrefix}{avatarSvg}";
-        defaultAvatarPngSrc = $"{FormatUtils.ImagePngDataPrefix}{avatarPng}";
-        
+        _tradingGroups = (await LiveDemoServices.GetContext(AppState.IsLive)
+            .TradingGroupsRepository.GetAllAsync()).Select(TradingGroupModel.Create).Select(tg=>tg.Id).ToList();
+        _selectedTradingGroup = await GetDefaultTradingGroupValueAsync();
+
+        var avatarSvg = await DefValuesRepository.GetTradingInstrumentAvatarSvgAsync();
+        var avatarPng = await DefValuesRepository.GetTradingInstrumentAvatarPngAsync();
+        _defaultAvatarSvgSrc = $"{FormatUtils.ImageSvgDataPrefix}{avatarSvg}";
+        _defaultAvatarPngSrc = $"{FormatUtils.ImagePngDataPrefix}{avatarPng}";
+
         await base.OnInitializedAsync();
     }
 
-    private async void SaveDefaultLP()
+    #region Default LP
+
+    private async void SaveDefaultLp()
     {
         try
         {
-            await defLiquidityProviderWriter.SetAsync(selectedLiquidityProvider);
-            snackbar.Add($"Default LiquidityProvider set to '{selectedLiquidityProvider}'", Severity.Success);
+            await DefLiquidityProviderWriter.SetAsync(_selectedLiquidityProvider);
+            Snackbar.Add($"Default LiquidityProvider set to '{_selectedLiquidityProvider}'", Severity.Success);
         }
         catch(Exception ex)
         {
-            logger.Error(ex, ex.Message);
-            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Logger.Error(ex, ex.Message);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 
-    private async void ResetDefaultLP()
+    private async void ResetDefaultLp()
     {
-        selectedLiquidityProvider = await defLiquidityProviderWriter.GetAsync();
+        _selectedLiquidityProvider = await DefLiquidityProviderWriter.GetAsync();
         StateHasChanged();
     }
+
+    #endregion
+
+    #region Default Trading Group
+
+    private string GetValueNameSuffix()
+    {
+        return AppState.IsLive ? "live" : "demo";
+    }
+
+    private async Task<string> GetDefaultTradingGroupValueAsync()
+    {
+        return await DefValuesService.GetValueAsync("defaulttg", GetValueNameSuffix());
+    }
+
+    private async void SaveDefaultTradingGroupAsync()
+    {
+        await DefValuesService.SetValueAsync("defaulttg", _selectedTradingGroup, GetValueNameSuffix());
+        Snackbar.Add($"Default Trading Group is set to '{_selectedTradingGroup}'", Severity.Success);
+    }
+
+    private async void ResetTradingGroupAsync()
+    {
+        _selectedTradingGroup = await GetDefaultTradingGroupValueAsync();
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Default Markup
 
     private async void SaveDefaultMarkup()
     {
         try
         {
-            await defMarkupProfileWriter.SetAsync(selectedMarkupProfile);
-            snackbar.Add($"Default MarkupProfile set to '{selectedMarkupProfile}'", Severity.Success);
+            await DefMarkupProfileWriter.SetAsync(_selectedMarkupProfile);
+            Snackbar.Add($"Default MarkupProfile set to '{_selectedMarkupProfile}'", Severity.Success);
         }
         catch(Exception ex)
         {
-            logger.Error(ex, ex.Message);
-            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Logger.Error(ex, ex.Message);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 
     private async void ResetDefaultMarkup()
     {
-        selectedMarkupProfile = await defMarkupProfileWriter.GetAsync();
+        _selectedMarkupProfile = await DefMarkupProfileWriter.GetAsync();
         this.StateHasChanged();
     }
+    
+    #endregion
+
+    #region Default Avatar
 
     private void ImageFileChanged(InputFileChangeEventArgs e)
     {
-        imageFile = e.File;
+        _imageFile = e.File;
         InvokeAsync(StateHasChanged);
     }
 
@@ -184,19 +251,19 @@
             var maxFileSizeInMb = 5;
             var fileSizeInBytes = maxFileSizeInMb * 1024 * 1024;
 
-            if (imageFile == null)
+            if (_imageFile == null)
             {
-                snackbar.Add("Choose a file to upload", Severity.Warning);
+                Snackbar.Add("Choose a file to upload", Severity.Warning);
                 return;
             }
 
-            if (imageFile.Size > fileSizeInBytes)
+            if (_imageFile.Size > fileSizeInBytes)
             {
-                snackbar.Add($"Max file size is {maxFileSizeInMb} MB", Severity.Warning);
+                Snackbar.Add($"Max file size is {maxFileSizeInMb} MB", Severity.Warning);
                 return;
             }
 
-            var fileExtension = imageFile.Name.Substring(imageFile.Name.LastIndexOf('.') + 1);
+            var fileExtension = _imageFile.Name.Substring(_imageFile.Name.LastIndexOf('.') + 1);
 
             ImageTypes? imageType = fileExtension.ToLower() switch 
             {
@@ -207,28 +274,30 @@
 
             if (imageType == null)
             {
-                snackbar.Add("File Extension is not svg/png", Severity.Warning);
+                Snackbar.Add("File Extension is not svg/png", Severity.Warning);
                 return;
             }
 
-            var imgArray = await CommonUtils.FileToBytesAsync(imageFile);
+            var imgArray = await CommonUtils.FileToBytesAsync(_imageFile);
             var avatarStr = Convert.ToBase64String(imgArray);
 
             if (imageType == ImageTypes.SVG)
             {
-                await defValuesRepository.SetTradingInstrumentAvatarSvgAsync(avatarStr);
-                snackbar.Add("New default SVG avatar saved", Severity.Success);
+                await DefValuesRepository.SetTradingInstrumentAvatarSvgAsync(avatarStr);
+                Snackbar.Add("New default SVG avatar saved", Severity.Success);
             }
             else
             {
-                await defValuesRepository.SetTradingInstrumentAvatarPngAsync(avatarStr);
-                snackbar.Add("New default PNG avatar saved", Severity.Success);
+                await DefValuesRepository.SetTradingInstrumentAvatarPngAsync(avatarStr);
+                Snackbar.Add("New default PNG avatar saved", Severity.Success);
             }
         }
         catch(Exception ex)
         {
-            logger.Error(ex, ex.Message);
-            snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Logger.Error(ex, ex.Message);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
+
+    #endregion
 }

@@ -1,13 +1,18 @@
 using DealingAdmin.Abstractions;
+using DealingAdmin.Abstractions.Interfaces;
+using DealingAdmin.Abstractions.Models.BidAskSb;
+using DealingAdmin.Abstractions.Providers.Interfaces;
 using DealingAdmin.Services;
+using DealingAdmin.Services.Contracts;
+using DealingAdmin.Services.Providers;
 using DealingAdmin.Shared.Services;
-using DealingAdmin.Shared.Services.Providers;
-using DealingAdmin.Shared.Services.Providers.Interfaces;
 using DealingAdmin.Validators;
 using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using MyNoSqlServer.DataReader;
 using MyPostgreSQL;
+using MyServiceBus.Abstractions;
+using MyServiceBus.Sdk;
 using MyServiceBus.TcpClient;
 using ProtoBuf.Grpc.Client;
 using Serilog;
@@ -20,7 +25,6 @@ using SimpleTrading.Abstraction.Trading;
 using SimpleTrading.Abstraction.Trading.Instruments;
 using SimpleTrading.Abstraction.Trading.InstrumentsGroup;
 using SimpleTrading.Abstraction.Trading.Profiles;
-using SimpleTrading.Abstraction.Trading.Settings;
 using SimpleTrading.Abstraction.Trading.Swaps;
 using SimpleTrading.Admin.Grpc;
 using SimpleTrading.Auth.Grpc;
@@ -33,12 +37,14 @@ using SimpleTrading.Engine.Grpc;
 using SimpleTrading.MyNoSqlRepositories;
 using SimpleTrading.PersonalData.Grpc;
 using SimpleTrading.QuotesFeedRouter.Abstractions;
-using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
-using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.BidAsk;
+//using SimpleTrading.ServiceBus.PublisherSubscriber.UnfilteredBidAsk;
 using SimpleTrading.TickHistory.Grpc;
 using SimpleTrading.TradeLog.Grpc;
 using System;
 using System.Collections.Generic;
+
+//using SimpleTrading.ServiceBus.Contracts;
 
 namespace DealingAdmin
 {
@@ -137,23 +143,91 @@ namespace DealingAdmin
 
             // ST Services (to be replaced in the future)
             services.AddSingleton<IBidAskCache>(tcpConnection.CreateBidAskMyNoSqlCache());
-            services.AddSingleton<IInstrumentsCache>(tcpConnection.CreateInstrumentsMyNoSqlReadCache());
+
+            #region Data Providers
+
+            #region Price Router Lp Source
+
+            // Repository
+            services.AddSingleton<IRepository<IProviderRouterSource>>(
+                new ProviderRouterSourceRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
+
+            #region Providers Instrument Info
+
+            // Repository
+            services.AddSingleton<IProviderInstrumentsInfoService, ProviderInstrumentsInfoService>();
+
+            #endregion
+
+            #region Liquidity Providers
+
+            // Repository
+            services.AddSingleton<ILiquidityProviderReader>(
+                new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
+            // Repository
+            services.AddSingleton<IAvailableLiquidityProviders>(
+                new AvailableLiquidityProviders(settingsModel.AvailableLiquidityProviders));
+
+            #endregion
+
+            #region Trading Instruments and dependencies
+
+            #region Instruments
+
+            // Cache
+            services.AddSingleton<ICache<ITradingInstrument>>(new InstrumentCache(tcpConnection));
+            // Repository
+            services.AddSingleton<ITradingInstrumentsRepository>(MyNoSqlServerFactory.CreateTradingInstrumentsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            #endregion
+
+            #region Other
+            services.AddSingleton<IInstrumentGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentGroupsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            services.AddSingleton<IInstrumentSubGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentSubGroupsMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            services.AddSingleton(CommonMyNoSqlServerFactory.CreateTradingInstrumentMyNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+
+
+            #endregion
+
+            #region Instrument Source Map
+
+            services.AddSingleton<ICache<IQuoteFeedSource>>(new InstrumentSourcesMapsCache(tcpConnection));
+            services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
+                () => settingsModel.DictionariesMyNoSqlServerWriter));
+
+            #endregion
 
             #region Instrument Mapping
 
             // Cache
-            // services.AddSingleton<IInstrumentMappingCache>(new InstrumentMappingCache(tcpConnection));
-            
+            services.AddSingleton<ICache<IProviderInstrumentMap>>(new InstrumentMappingCache(tcpConnection));
             // Repository
-            services.AddSingleton<IInstrumentMappingRepository>(
+            services.AddSingleton<IRepository<IProviderInstrumentMap>>(
                 new InstrumentMappingRepository(settingsModel.DictionariesMyNoSqlServerWriter));
 
             #endregion
 
-            services.AddSingleton<ILiquidityProviderReader>(
-                new LiquidityProviderReader(settingsModel.QuoteFeedRouterUrl));
-            services.AddSingleton(MyNoSqlServerFactory.CreateInstrumentSourcesMapsNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
+            #endregion
+
+            #region Default Values
+
+            // Repository
+            services.AddSingleton<IRepository<IDefaultValues>>(
+                new DefaultValuesRepository(settingsModel.DictionariesMyNoSqlServerWriter));
+            
+            // Service
+            services.AddSingleton<IDefaultValuesService, DefaultValuesService>();
+
+            #endregion
+
+            #endregion
+
+
             services.AddSingleton((IDefaultValuesRepository)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(
                 () => settingsModel.DictionariesMyNoSqlServerWriter));
             services.AddSingleton((IDefaultLiquidityProviderWriter)CommonMyNoSqlServerFactory.CreateDefaultValueMyNoSqlRepository(
@@ -173,14 +247,6 @@ namespace DealingAdmin
             liveDemoServicesMapper.InitService(false,
                services => services.ActiveOrdersReader = MyNoSqlServerFactory.CreateActiveOrdersCacheReader(tcpConnection, false));
 
-            services.AddSingleton<ITradingInstrumentsRepository>(MyNoSqlServerFactory.CreateTradingInstrumentsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton<IInstrumentGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentGroupsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton<IInstrumentSubGroupsRepository>(MyNoSqlServerFactory.CreateInstrumentSubGroupsMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
-            services.AddSingleton(CommonMyNoSqlServerFactory.CreateTradingInstrumentMyNoSqlRepository(
-                () => settingsModel.DictionariesMyNoSqlServerWriter));
 
             BindLiveDemoMyNoSql(liveDemoServicesMapper, settingsModel, true);
             BindLiveDemoMyNoSql(liveDemoServicesMapper, settingsModel, false);
@@ -295,29 +361,47 @@ namespace DealingAdmin
 
         public static MyServiceBusTcpClient BindServiceBus(this IServiceCollection services, SettingsModel settingsModel)
         {
+            var appName = AppName;
+            #if DEBUG
+            appName += "-dev";
+            #endif
             var serviceBusTcpClient = new MyServiceBusTcpClient(
                 () => settingsModel.PricesMyServiceBusReader,
                 AppName);
 
-            services.AddSingleton(new UnfilteredBidAskMyServiceBusSubscriber(
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<UnfilteredBidAskSb>(
                 serviceBusTcpClient,
-                AppName,
-                MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
+                "unfiltered-bidask",
+                appName,
+                TopicQueueType.DeleteOnDisconnect,
                 false));
 
-            services.AddSingleton(new BidAskMyServiceBusSubscriber(
-                serviceBusTcpClient,
-                AppName,
-                MyServiceBus.Abstractions.TopicQueueType.DeleteOnDisconnect,
+            services.AddSingleton(new MyServiceBusSubscriberBatchWithoutVersion<BidAskSb>(serviceBusTcpClient,
                 "bidask",
+                appName,
+                TopicQueueType.DeleteOnDisconnect,
                 false));
 
-            services.AddSingleton(new UnfilteredBidAskMyServiceBusPublisher(serviceBusTcpClient));
+            services.AddSingleton(new MyServiceBusPublisher<IUnfilteredBidAsk>(
+                serviceBusTcpClient,
+                "unfiltered-bidask",
+                true,
+                null
+            ));
 
-            services.AddSingleton(new BidAskMyServiceBusPublisher(serviceBusTcpClient));
+            services.AddSingleton(new MyServiceBusPublisher<IBidAskSb>(
+                serviceBusTcpClient,
+                "bidask",
+                true,
+                null
+            ));
 
-            services.AddSingleton(new CandlesHistoryMyServiceBusPublisher(serviceBusTcpClient));
-
+            services.AddSingleton(new MyServiceBusPublisher<UpdateCandlesHistoryServiceBusContract>(
+                serviceBusTcpClient,
+                "update-candles-history",
+                true,
+                null
+            ));
             return serviceBusTcpClient;
         }
 

@@ -1,0 +1,193 @@
+@using DealingAdmin.Abstractions.Models
+@using DealingAdmin.Abstractions.Models.ProviderInstruments
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using DealingAdmin.Shared.Models
+@using static DealingAdmin.Abstractions.Extensions.StringExtension
+@using Microsoft.AspNetCore.Components
+@using SimpleTrading.Abstraction.Trading.InstrumentsGroup
+@using SimpleTrading.Abstraction.Trading.Swaps
+
+
+@inject AdminAppSettings AppSettings
+@inject ISnackbar Snackbar
+@inject IProviderInstrumentsInfoService ProviderInstrumentsInfo
+
+<Form @ref="_editForm"
+        Model="Instrument" 
+        ValidateOnChange="@false"
+        ValidateMode="@FormValidateMode.Rules"
+        LabelColSpan="6"
+        WrapperColSpan="18">
+    <Validator>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </Validator>
+    <ChildContent>
+        @if (context.Id.IsNullOrEmpty() && _liquidityInfoProvidersViewList.Any())
+        {
+            <FormItem>
+                <Button
+                    OnClick="ShowCopyFromProvider">
+                    Copy From Provider
+                </Button>
+            </FormItem>            
+        }
+        <FormItem Label="Id" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Id" Placeholder="Instrument Id" Disabled="@(context.Id.IsNotNullOrEmpty())"/>
+        </FormItem>
+        <FormItem Label="Weight" Required>
+            <Input @bind-Value="@context.Weight" TValue="int?" Placeholder="Weight"/>
+        </FormItem>
+        <FormItem Label="Name" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Name" Placeholder="Name"/>
+        </FormItem>
+        <FormItem Label="Base" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Base" Placeholder="Base"/>
+        </FormItem>
+        <FormItem Label="Quote" Required Rules=@_requiredRule>
+            <Input @bind-Value="@context.Quote" Placeholder="Quote"/>
+        </FormItem>
+        <FormItem Label="Digits" Required>
+            <Input @bind-Value="@context.Digits" TValue="int" Placeholder="Digits"/>
+        </FormItem>
+        <FormItem Label="TickSize" Required>
+            <Input @bind-Value="@context.TickSize" TValue="double" Placeholder="Tick Size"/>
+        </FormItem>
+        <FormItem Label="Swap Schedule">
+            <Select @bind-Value="@Instrument.SwapScheduleId"
+                    TItemValue="string"
+                    TItem="string">
+                <SelectOptions>
+                    @foreach (var item in SwapProfiles.Where(x => x.InstrumentId == Instrument.Id))
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value=@item.Id Label=@($"[{item.Id}] Long:{item.Long} Short:{item.Short}")/>
+                    }
+                </SelectOptions>
+            </Select>
+        </FormItem>
+        <FormItem Label="Trading Group" >
+            <Select @bind-Value="@Instrument.GroupId"
+                    TItemValue="string"
+                    TItem="string">
+                <SelectOptions>
+                    @foreach (var item in InstrumentGroups)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value=@item.Id Label=@item.Name/>
+                    }
+                </SelectOptions>
+            </Select>
+        </FormItem>
+        <AntDesign.Row Class="center-middle py-3">
+            <Col Span="6">
+                Days Off
+            </Col>
+            <Col Span="18">
+                <DaysOffEditor @bind-Instrument="@Instrument"/>
+            </Col>
+        </AntDesign.Row>
+        <FormItem Label="Day Timeout">
+            <Input @bind-Value="@context.DayTimeout" TValue="int?" Placeholder="Day Timeout"/>
+        </FormItem>
+        <FormItem Label="Night Timeout">
+            <Input @bind-Value="@context.NightTimeout" TValue="int?" Placeholder="Night Timeout"/>
+        </FormItem>
+        <FormItem Label="API Key" Required Rules=@_crudApiKeyRule>
+            <InputPassword @bind-Value="@context.TokenKey"/>
+        </FormItem>
+    </ChildContent>
+</Form>
+ 
+<InstrumentProviderFeed 
+    Title="Instrument Copy"
+    @bind-Visible="@_isCopyDialogVisible"
+    LiquidityProvidersViewList="@_liquidityInfoProvidersViewList"
+    
+    Copy="true"
+    Instrument="Instrument"
+/>
+@*LiquidityProvidersViewList="@LiquidityProvidersViewList.Where(i=>i.Value.IsNotNullOrEmpty() && _availableInfoProviders.Contains(i.Value))"*@
+
+@code {
+    [Parameter]
+    public TradingInstrumentViewModel Instrument { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<TradingInstrumentViewModel> InstrumentChanged { get; set; }
+
+    [Parameter]
+    public IEnumerable<ISwapProfile> SwapProfiles { get; set; }
+
+    [Parameter]
+    public IEnumerable<IInstrumentGroup> InstrumentGroups { get; set; }
+
+    [Parameter]
+    public IEnumerable<IInstrumentSubGroup> SubGroups { get; set; }
+
+    [Parameter]
+    public List<ViewListItem> LiquidityProvidersViewList { get; set; }
+
+    [Parameter]
+    public Dictionary<string, Dictionary<string, string>> FeedDict { get; set; }
+
+    private IEnumerable<ProviderInstrumentInfo> _providerInstrumentInfoSource = new List<ProviderInstrumentInfo>();
+
+    private Dictionary<string, IEnumerable<ProviderInstrumentInfo>> _providersDictionary = new();
+    private IEnumerable<ProviderInstrumentInfo> _selectedProviderInstrumentInfo;
+    private string _editedLiquidityProviderId;
+    private IEnumerable<ViewListItem> _liquidityInfoProvidersViewList;
+
+    Form<TradingInstrumentViewModel> _editForm;
+
+    private bool _isCopyDialogVisible = false;
+    private FormValidationRule[] _requiredRule = { new() { Required = true } };
+    private FormValidationRule[] _crudApiKeyRule;
+    /*
+    private async Task LpChange(string item)
+    {
+        if (_editedLiquidityProviderId != item)
+        {
+            await LpChanged(item).ConfigureAwait(false);
+        }
+        _editedLiquidityProviderId = item;
+    }
+
+    private async Task LpChanged(string item)
+    {
+        _providerInstrumentInfoSource = await ProviderInstrumentsInfo.InstrumentsInfo(item).ConfigureAwait(false);
+    }
+    */
+    protected override void OnInitialized()
+    {
+        var availableInfoProviders = ProviderInstrumentsInfo.GetAvailableInfoProviders();
+        _liquidityInfoProvidersViewList = LiquidityProvidersViewList
+            .Where(lp => availableInfoProviders.Contains(lp.Value.ToLowerInvariant()));
+        _crudApiKeyRule = new []
+        {
+            new FormValidationRule
+            {
+                Required = true,
+                Type = FormFieldType.String,
+    // ReSharper disable once CoVariantArrayConversion
+    // ReSharper disable once RedundantExplicitArrayCreation
+                OneOf = new string[] { AppSettings.AdminCrudApiKey },
+                Message = "API Key is not valid"
+            }
+        };
+        
+        base.OnInitialized();
+    }
+
+    public bool ValidateEditForm()
+    {
+        return _editForm.Validate();
+    }
+
+    #region Layout Functions
+
+    private async Task ShowCopyFromProvider()
+    {
+        _isCopyDialogVisible = true;
+    }
+
+    #endregion
+}
+

@@ -24,7 +24,7 @@
 @inject ISnackbar snackbar
 @inject Logger logger
 
-<PageHeader Class="mb-2 p-0" Title="Instruments">
+<PageHeader Class="m-0 p-0" Title="Instrument Avatars">
 </PageHeader>
 <Table DataSource="@tradingInstruments"
        TItem="TradingInstrumentModel"
@@ -34,50 +34,50 @@
        HidePagination="@true"
        ScrollY="calc(100vh - 200px)"
        PageSize="999">
-    <RowTemplate>
-        <AntDesign.Column Title="Group"
-                TData="string"
-                DataIndex="GroupId"
-                Sortable
-                Filterable/>
-        <AntDesign.Column Title="Id"
-                TData="string"
-                DataIndex="Id"
-                Sortable>
-            <p>Id: <b>@context.Id</b></p>
-            <p>Name: <b>@context.Name</b></p>
-        </AntDesign.Column>
-        <AntDesign.Column Title="Weight"
-            TData="int?"
-            DataIndex="Weight"
+
+    <AntDesign.Column Title="Group"
+            TData="string"
+            DataIndex="GroupId"
             Sortable
-            Width="80"/>
-        <AntDesign.Column Title="Sub group" 
-                DataIndex="SubGroupId" 
-                TData="string"
-                Sortable
-                Filterable/>
-        <AntDesign.Column Title="Avatar"
-                TData="string"
-                Width="80">
-            <a @onclick="()=>ShowEditAvatarDialog(context)">
-                @if (dictAvatars[context.Id].ContainsKey(ImageTypes.SVG))
-                {
-                    <Image Preview="@false" 
-                        Src="@($"{FormatUtils.ImageSvgDataPrefix}{dictAvatars[context.Id][ImageTypes.SVG].Avatar}")"/>
-                }
-                else if (dictAvatars[context.Id].ContainsKey(ImageTypes.PNG))
-                {
-                    <Image Preview="@false" 
-                        Src="@($"{FormatUtils.ImagePngDataPrefix}{dictAvatars[context.Id][ImageTypes.PNG].Avatar}")"/>
-                }
-                else
-                {
-                    <div>NoData</div>
-                }
-            </a>
-        </AntDesign.Column>
-    </RowTemplate>
+            Filterable/>
+    <AntDesign.Column Title="Id"
+            TData="string"
+            DataIndex="Id"
+            Sortable>
+        <p>Id: <b>@context.Id</b></p>
+        <p>Name: <b>@context.Name</b></p>
+    </AntDesign.Column>
+    <AntDesign.Column Title="Weight"
+        TData="int?"
+        DataIndex="Weight"
+        Sortable
+        Width="80"/>
+    <AntDesign.Column Title="Sub group" 
+            DataIndex="SubGroupId" 
+            TData="string"
+            Sortable
+            Filterable/>
+    <AntDesign.Column Title="Avatar"
+            TData="string"
+            Width="80">
+        <a @onclick="()=>ShowEditAvatarDialog(context)">
+            @if (dictAvatars[context.Id].ContainsKey(ImageTypes.SVG))
+            {
+                <Image Preview="@false" 
+                    Src="@($"{FormatUtils.ImageSvgDataPrefix}{dictAvatars[context.Id][ImageTypes.SVG].Avatar}")"/>
+            }
+            else if (dictAvatars[context.Id].ContainsKey(ImageTypes.PNG))
+            {
+                <Image Preview="@false" 
+                    Src="@($"{FormatUtils.ImagePngDataPrefix}{dictAvatars[context.Id][ImageTypes.PNG].Avatar}")"/>
+            }
+            else
+            {
+                <div>NoData</div>
+            }
+        </a>
+    </AntDesign.Column>
+
 </Table>
 
 <Modal Title="@avatarEditFormTitle"

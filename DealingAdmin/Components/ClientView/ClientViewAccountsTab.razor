@@ -32,50 +32,49 @@
         HidePagination="@true"
         ScrollY="calc(100vh - 260px)"
         PageSize="999">
-    <RowTemplate> 
-        <AntDesign.Column Title="Account"
-                DataIndex="AccountId"
-                TData="string"
-                Sortable
-                Filterable/>
-        <AntDesign.Column Title="Currency"
-                DataIndex="Currency"
-                TData="string"
-                Width="120"/>
-        <AntDesign.Column Title="Balance"
-                DataIndex="Balance"
-                TData="double"/>
-        <AntDesign.Column Title="Real Funds" TData="double">
-            @((context.Balance - context.Bonus > 0
-                ? context.Balance - context.Bonus : 0))
-        </AntDesign.Column> 
-        <AntDesign.Column Title="Bonus"
-                DataIndex="Bonus"
-                TData="double"/>              
-        <AntDesign.Column Title="Trading Group"
-                DataIndex="TradingGroup"
-                TData="string"/>
-        <ActionColumn Title="Actions" Width="200">
-            <div>
-                <Tooltip Title="@("Active Positions")">
-                    <a><i @onclick="()=>OpenActiveOrdersInNewTab(context.AccountId)"
-                        class="material-icons color-aquamarine">format_list_bulleted</i></a>
-                </Tooltip>
-                <Tooltip Title="@("Closed Positions")">
-                    <a><i @onclick="()=>OpenClosedOrdersInNewTab(context.AccountId)"
-                        class="material-icons color-green">checklist</i></a>
-                </Tooltip>
-                <Tooltip Title="@("Update Balance")">
-                    <a><i @onclick="()=>ShowUpdateBalanceDialog(context.AccountId)"
-                        class="material-icons color-primary">account_balance_wallet</i></a>
-                </Tooltip>
-                <Tooltip Title="@("Update Group")">    
-                    <a><i @onclick="()=>ShowUpdateTradingGroupDialog(context.AccountId)"
-                        class="material-icons color-teal">list_alt</i></a>
-                </Tooltip>
-            </div>
-        </ActionColumn>
-    </RowTemplate>
+
+    <AntDesign.Column Title="Account"
+            DataIndex="AccountId"
+            TData="string"
+            Sortable
+            Filterable/>
+    <AntDesign.Column Title="Currency"
+            DataIndex="Currency"
+            TData="string"
+            Width="120"/>
+    <AntDesign.Column Title="Balance"
+            DataIndex="Balance"
+            TData="double"/>
+    <AntDesign.Column Title="Real Funds" TData="double">
+        @((context.Balance - context.Bonus > 0
+            ? context.Balance - context.Bonus : 0))
+    </AntDesign.Column> 
+    <AntDesign.Column Title="Bonus"
+            DataIndex="Bonus"
+            TData="double"/>              
+    <AntDesign.Column Title="Trading Group"
+            DataIndex="TradingGroup"
+            TData="string"/>
+    <ActionColumn Title="Actions" Width="200">
+        <div>
+            <Tooltip Title="@("Active Positions")">
+                <a><i @onclick="()=>OpenActiveOrdersInNewTab(context.AccountId)"
+                    class="material-icons color-aquamarine">format_list_bulleted</i></a>
+            </Tooltip>
+            <Tooltip Title="@("Closed Positions")">
+                <a><i @onclick="()=>OpenClosedOrdersInNewTab(context.AccountId)"
+                    class="material-icons color-green">checklist</i></a>
+            </Tooltip>
+            <Tooltip Title="@("Update Balance")">
+                <a><i @onclick="()=>ShowUpdateBalanceDialog(context.AccountId)"
+                    class="material-icons color-primary">account_balance_wallet</i></a>
+            </Tooltip>
+            <Tooltip Title="@("Update Group")">    
+                <a><i @onclick="()=>ShowUpdateTradingGroupDialog(context.AccountId)"
+                    class="material-icons color-teal">list_alt</i></a>
+            </Tooltip>
+        </div>
+    </ActionColumn>
 </Table>
 
 <Modal Title="Update Balance"
