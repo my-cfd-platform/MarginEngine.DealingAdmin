@@ -223,10 +223,6 @@ namespace DealingAdmin
             // Service
             services.AddSingleton<IDefaultValuesService, DefaultValuesService>();
 
-            // Default Favorite Instruments Repository
-            services.AddSingleton<IRepository<IDefaultFavoriteInstruments>>(
-                new DefaultFavoriteInstrumentsRepository(settingsModel.DictionariesMyNoSqlServerWriter));
-
             #endregion
 
             #endregion

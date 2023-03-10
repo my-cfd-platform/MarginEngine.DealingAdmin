@@ -17,12 +17,28 @@ public class DefaultValuesService: IDefaultValuesService
         return res != null ? res.Value : string.Empty;
     }
 
+    public async Task<IEnumerable<string>> GetValuesAsync(string key, string suffix)
+    {
+        var res = await _repository.GetAsync($"{key}{suffix}");
+        return res is { Values: { } } ? res.Values : new List<string>();
+    }
+
     public async Task SetValueAsync(string key, string value, string suffix = "")
     {
-        var entity = new DefaultValuesEntity()
+        var entity = new DefaultValuesEntity
         {
             Id = $"{key}{suffix}",
             Value = value
+        };
+        await _repository.UpdateAsync(entity);
+    }
+
+    public async Task SetValuesAsync(string key, IEnumerable<string> values, string suffix = "")
+    {
+        var entity = new DefaultValuesEntity
+        {
+            Id = $"{key}{suffix}",
+            Values = values
         };
         await _repository.UpdateAsync(entity);
     }

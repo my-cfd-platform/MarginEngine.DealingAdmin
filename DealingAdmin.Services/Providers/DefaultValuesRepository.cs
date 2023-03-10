@@ -1,12 +1,11 @@
-﻿using System.Dynamic;
-using DealingAdmin.Abstractions.Providers.Interfaces;
+﻿using DealingAdmin.Abstractions.Providers.Interfaces;
 using DealingAdmin.Abstractions.Providers.Models;
 using MyNoSqlServer.Abstractions;
 using MyNoSqlServer.DataWriter;
 
 namespace DealingAdmin.Services.Providers;
 
-public class DefaultValuesRepository: IRepository<IDefaultValues>
+public class DefaultValuesRepository : IRepository<IDefaultValues>
 {
     private readonly IMyNoSqlServerDataWriter<DefaultValuesEntity> _table;
     private const string TableName = "defaultvalues";
@@ -36,6 +35,6 @@ public class DefaultValuesRepository: IRepository<IDefaultValues>
     public async Task<IDefaultValues> GetAsync(string key)
     {
         var partitionKey = DefaultValuesEntity.GeneratePartitionKey();
-        return await _table.GetAsync(partitionKey,key);
+        return await _table.GetAsync(partitionKey, key);
     }
 }

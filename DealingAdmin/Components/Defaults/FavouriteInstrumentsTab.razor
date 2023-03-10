@@ -1,0 +1,255 @@
+﻿@using DealingAdmin.Shared.Models
+@using DealingAdmin.Abstractions.Providers.Models
+@using DealingAdmin.Abstractions.Providers.Interfaces
+@using SimpleTrading.Abstraction.Trading.Instruments
+
+@inject ICache<ITradingInstrument> InstrumentsCache
+@inject IDefaultValuesService DefValuesService;
+
+<Card Title="Default Web Instrument Favourites" Class="my-2" Style="width: 600px;">
+    <Body>
+    <AntDesign.Button
+        Class="btn-text bg-color-aquamarine"
+        OnClick="SaveDefaultWebFavs"
+        Disabled="WebFavouritesChangesAvailable()">Save</AntDesign.Button>
+    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="RefreshDefaultFavouritesAsync">Reset</AntDesign.Button>
+    <Divider Orientation="left"></Divider>
+    <GridRow Gutter="16">
+        <GridCol Span="9">
+            <Divider Orientation="left">Selected Instruments</Divider>
+            <Table DataSource="@_webFavourites"
+                   TItem="ExtendedViewListItem"
+                   ScrollY="220px"
+                   Style="min-height: 220px; height: 220px"
+                   HidePagination="true">
+                <ColumnDefinitions>
+                    <ColumnDefinition Title="Selected"
+                                      Width="48"/>
+                    <ColumnDefinition Title=""
+                                      Width="12"
+                                      Fixed="right"/>
+                </ColumnDefinitions>
+                <RowTemplate>
+                    <TableRow>
+                        <TableCell Align="ColumnAlign.Center">
+                            <Tag PresetColor="context.Data.IsNew ? PresetColor.Orange : PresetColor.Lime">
+                            @context.Data.Value
+                            </Tag>
+                        </TableCell>
+                        <TableCell Align="ColumnAlign.Center">
+                            <a  @onclick="() => WebDisable(context.Data)">
+                                <i class="material-icons color-crimson mx-1">arrow_right</i>
+                            </a>
+                        </TableCell>
+                    </TableRow>
+                </RowTemplate>
+            </Table>
+        </GridCol>
+        <GridCol Span="8">
+            <Divider Orientation="left">Available Instruments</Divider>
+            <Table DataSource="@_availableWebInstruments"
+                   TItem="ExtendedViewListItem"
+                   ScrollY="220px"
+                   Style="min-height: 220px; height: 220px"
+                   HidePagination="true">
+                <ColumnDefinitions>
+                    <ColumnDefinition Title=""
+                                      Width="12"
+                                      Fixed="left"/>
+                    <ColumnDefinition Title="Available"
+                                      Width="52"/>
+                </ColumnDefinitions>
+                <RowTemplate>
+                    <TableRow>
+                        <TableCell Align="ColumnAlign.Center">
+                            <a @onclick="() => WebEnable(context.Data)">
+                                <i class="material-icons color-crimson mx-1">arrow_left</i>
+                            </a>
+                        </TableCell>
+                        <TableCell Align="ColumnAlign.Center">
+                            <Tag PresetColor="context.Data.IsNew ? PresetColor.Red : PresetColor.Lime">
+                            @context.Data.Value
+                            </Tag>
+                        </TableCell>
+                    </TableRow>
+                </RowTemplate>
+            </Table>
+        </GridCol>
+    </GridRow>
+
+
+    </Body>
+</Card>
+<Card Title="Default Mobile Instrument Favourites" Class="my-2" Style="width: 600px;">
+    <Body>
+    <AntDesign.Button
+        Class="btn-text bg-color-aquamarine"
+        OnClick="SaveDefaultMobileFavs"
+        Disabled="MobileFavouritesChangesAvailable()">Save</AntDesign.Button>
+    <AntDesign.Button Class="btn-text bg-color-light-yellow" OnClick="RefreshDefaultFavouritesAsync">Reset</AntDesign.Button>
+    <Divider Orientation="left"></Divider>
+    <GridRow Gutter="16">
+        <GridCol Span="9">
+            <Divider Orientation="left">Selected Instruments</Divider>
+            <Table DataSource="@_mobileFavourites"
+                   TItem="ExtendedViewListItem"
+                   ScrollY="220px"
+                   Style="min-height: 220px; height: 220px"
+                   HidePagination="true">
+                <ColumnDefinitions>
+                    <ColumnDefinition Title="Selected"
+                                      Width="48"/>
+                    <ColumnDefinition Title=""
+                                      Width="12"
+                                      Fixed="right"/>
+                </ColumnDefinitions>
+                <RowTemplate>
+                    <TableRow>
+                        <TableCell Align="ColumnAlign.Center">
+                            <Tag PresetColor="context.Data.IsNew ? PresetColor.Orange : PresetColor.Lime">
+                            @context.Data.Value
+                            </Tag>
+                        </TableCell>
+                        <TableCell Align="ColumnAlign.Center">
+                            <a  @onclick="() => MobileDisable(context.Data)">
+                                <i class="material-icons color-crimson mx-1">arrow_right</i>
+                            </a>
+                        </TableCell>
+                    </TableRow>
+                </RowTemplate>
+            </Table>
+        </GridCol>
+        <GridCol Span="8">
+            <Divider Orientation="left">Available Instruments</Divider>
+            <Table DataSource="@_availableMobileInstruments"
+                   TItem="ExtendedViewListItem"
+                   ScrollY="220px"
+                   Style="min-height: 220px; height: 220px"
+                   HidePagination="true">
+                <ColumnDefinitions>
+                    <ColumnDefinition Title=""
+                                      Width="12"
+                                      Fixed="left"/>
+                    <ColumnDefinition Title="Available"
+                                      Width="52"/>
+                </ColumnDefinitions>
+                <RowTemplate>
+                    <TableRow>
+                        <TableCell Align="ColumnAlign.Center">
+                            <a @onclick="() => MobileEnable(context.Data)">
+                                <i class="material-icons color-crimson mx-1">arrow_left</i>
+                            </a>
+                        </TableCell>
+                        <TableCell Align="ColumnAlign.Center">
+                            <Tag PresetColor="context.Data.IsNew ? PresetColor.Red : PresetColor.Lime">
+                            @context.Data.Value
+                            </Tag>
+                        </TableCell>
+                    </TableRow>
+                </RowTemplate>
+            </Table>
+        </GridCol>
+    </GridRow>
+
+
+    </Body>
+</Card>
+@code {
+    private List<ExtendedViewListItem> _webFavourites;
+    private List<ExtendedViewListItem> _availableWebInstruments;
+    private List<ExtendedViewListItem> _mobileFavourites;
+    private List<ExtendedViewListItem> _availableMobileInstruments;
+    private List<string> _instruments;
+    private const string KeyName = "favouriteinstruments";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshDefaultFavouritesAsync();
+        await base.OnInitializedAsync();
+    }
+
+    #region Default Favorite Instruments
+
+
+    private async Task RefreshDefaultFavouritesAsync()
+    {
+
+        var webFavs = (await DefValuesService.GetValuesAsync(KeyName, "web")).ToList();
+        //var webFavs = await DefFavInstruments.GetAsync("web");
+        _webFavourites = webFavs.Select(i => new ExtendedViewListItem { Value = i }).ToList();
+        var mobileFavs = (await DefValuesService.GetValuesAsync(KeyName, "mobile")).ToList();
+        //var mobileFavs = await DefFavInstruments.GetAsync("mobile");
+        _mobileFavourites = mobileFavs.Select(i => new ExtendedViewListItem { Value = i }).ToList();
+        _instruments = InstrumentsCache.GetAll().Select(i => i.Id).ToList();
+        _availableWebInstruments = _instruments.Where(i => !(webFavs.Contains(i))).Select(i => new ExtendedViewListItem { Value = i }).ToList();
+        _availableMobileInstruments = _instruments.Where(i => !(mobileFavs.Contains(i))).Select(i => new ExtendedViewListItem { Value = i }).ToList();
+    }
+
+    private void WebEnable(ExtendedViewListItem item)
+    {
+        item.IsNew = !item.IsNew;
+        _webFavourites.Insert(0, item);
+        _availableWebInstruments.Remove(item);
+    }
+
+    private void WebDisable(ExtendedViewListItem item)
+    {
+        item.IsNew = !item.IsNew;
+        _webFavourites.Remove(item);
+        _availableWebInstruments.Insert(0, item);
+    }
+
+    private async void SaveDefaultWebFavs()
+    {
+        await DefValuesService.SetValuesAsync(KeyName, _webFavourites.Select(i => i.Value), "web");
+        //var item = DefaultFavoriteInstrumentsEntity.CreateWeb();
+        //await DefFavInstruments.UpdateAsync(item);
+        _webFavourites.ForEach(i => i.IsNew = false);
+        _availableWebInstruments.ForEach(i => i.IsNew = false);
+        StateHasChanged();
+    }
+
+    private bool WebFavouritesChangesAvailable()
+    {
+        if (_webFavourites is null || _availableWebInstruments is null)
+        {
+            return false;
+        }
+        return !(_webFavourites.Any(a => a.IsNew) || _availableWebInstruments.Any(a => a.IsNew));
+    }
+
+    private bool MobileFavouritesChangesAvailable()
+    {
+        if (_mobileFavourites is null || _availableMobileInstruments is null)
+        {
+            return false;
+        }
+        return !(_mobileFavourites.Any(a => a.IsNew) || _availableMobileInstruments.Any(a => a.IsNew));
+    }
+
+    private void MobileEnable(ExtendedViewListItem item)
+    {
+        item.IsNew = !item.IsNew;
+        _mobileFavourites.Insert(0, item);
+        _availableMobileInstruments.Remove(item);
+    }
+
+    private void MobileDisable(ExtendedViewListItem item)
+    {
+        item.IsNew = !item.IsNew;
+        _mobileFavourites.Remove(item);
+        _availableMobileInstruments.Insert(0, item);
+    }
+
+    private async void SaveDefaultMobileFavs()
+    {
+        await DefValuesService.SetValuesAsync(KeyName, _mobileFavourites.Select(i => i.Value), "mobile");
+        //var item = DefaultFavoriteInstrumentsEntity.CreateMobile(_mobileFavourites.Select(i => i.Value));
+        //await DefFavInstruments.UpdateAsync(item);
+        _mobileFavourites.ForEach(i => i.IsNew = false);
+        _availableMobileInstruments.ForEach(i => i.IsNew = false);
+        StateHasChanged();
+    }
+
+    #endregion
+}

@@ -1,4 +1,5 @@
-﻿using DealingAdmin.Abstractions.Providers.Interfaces;
+﻿using System.Collections.Generic;
+using DealingAdmin.Abstractions.Providers.Interfaces;
 using MyNoSqlServer.Abstractions;
 
 namespace DealingAdmin.Abstractions.Providers.Models;
@@ -11,7 +12,8 @@ public class DefaultValuesEntity : MyNoSqlDbEntity, IDefaultValues
         set => RowKey = value;
     }
 
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
+    public IEnumerable<string> Values { get; set; }
 
     public static string GeneratePartitionKey()
     {
@@ -24,7 +26,8 @@ public class DefaultValuesEntity : MyNoSqlDbEntity, IDefaultValues
         {
             PartitionKey = GeneratePartitionKey(),
             RowKey = src.Id,
-            Value = src.Value
+            Value = src.Value,
+            Values = src.Values
         };
     }
 }
