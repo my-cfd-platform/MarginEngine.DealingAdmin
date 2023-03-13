@@ -772,12 +772,13 @@
                 Snackbar.Add($"Edit Form for '{_editedInstrument.Id}' is not valid", Severity.Warning);
                 return;
             }
-            
+            CloseEditInstrumentDialog();
             await InstrumentsRepository.UpdateAsync(_editedInstrument).ConfigureAwait(false);
             //_isEditInstrumentDialogVisible = false;
             Snackbar.Add($"Instrument '{_editedInstrument.Id}' saved", Severity.Success);
-            CloseEditInstrumentDialog();
+
             await RefreshData();
+            //StateHasChanged();
         }
         catch (Exception ex)
         {

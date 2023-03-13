@@ -46,7 +46,7 @@
                 <InstrumentAllQuotes
                     Instrument="context"
                     ProvidersList="@liquidityProvidersList"
-                    ActiveProviderId="@dictInstrumentProviderMaps[context.Id]"/>
+                    ActiveProviderId="@GetActiveLp(@context.Id)"/>
             </ChildContent>               
         </AntDesign.Column>
   </Table>
@@ -88,5 +88,10 @@
         }
 
         await base.OnInitializedAsync();
+    }
+
+    private string GetActiveLp(string id)
+    {
+        return dictInstrumentProviderMaps.ContainsKey(id) ? @dictInstrumentProviderMaps[id] : string.Empty;
     }
 }
